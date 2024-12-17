@@ -17,12 +17,12 @@ if "%ERROR_MSG%"=="" (
 
 if "%ERROR_MSG%"=="" (
     echo [Update Check]
-    python project-installer\update_check.py || set ERROR_MSG=Update Check Failed
+    %VENV_DIR%\Scripts\python.exe project-installer\update_check.py || set ERROR_MSG=Update Check Failed
 )
 
 if "%ERROR_MSG%"=="" (
     echo [Start Running]
-    python main.py || set ERROR_MSG=Program Execution Failed
+    %VENV_DIR%\Scripts\python.exe main.py || set ERROR_MSG=Program Execution Failed
 )
 
 if "%ERROR_MSG%"=="" (
