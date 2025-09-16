@@ -1,4 +1,11 @@
 import traceback
+import os
+
+# 定義輸出資料夾
+DATA_FOLDER = "data"
+
+# 確保資料夾存在
+os.makedirs(DATA_FOLDER, exist_ok=True)
 
 if __name__ == "__main__":
     try:
