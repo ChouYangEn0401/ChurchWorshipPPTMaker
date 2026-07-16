@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>教會敬拜 PPT 產生器</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="logo">敬拜 PPT <small>網頁版</small></div>
+      <input class="projname" id="projName" type="text" placeholder="專案名稱（例：0705 主日）" />
+      <div class="seg-toggle" id="sizeToggle">
+        <button data-size="4:3">4:3</button>
+        <button data-size="16:9">16:9</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="btnLibrary">🧱 積木庫</button>
+      <button id="btnOpen">📂 讀專案</button>
+      <button id="btnSave">💾 存專案</button>
+      <button id="btnImport" title="匯入舊版 main.py 的 songs.json">↩ 匯入舊資料</button>
+      <button id="btnExport" class="primary">⬇ 匯出 PPT</button>
+    </div>
+
+    <div class="main">
+      <div class="editor">
+        <div class="songlist" id="songList"></div>
+        <div class="addsong">
+          <button id="btnAddSong" class="small">＋ 新增歌曲（沿用目前積木）</button>
+        </div>
+        <div class="song-editor" id="songEditor"></div>
+      </div>
+
+      <div class="preview-pane" id="previewPane"></div>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
