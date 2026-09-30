@@ -16,7 +16,8 @@
 - 改善：**字太多自動處理**。一行只差一點點放不下時整頁縮小一點（不會讓一兩個字掉到下一行）；真的放不下就從歌詞的空白處折行；還是太高再縮小。網頁預覽和 PPT 用同一套規則（測試會逐項比對）。
 - 改善：上傳的圖片自動轉正、太大的縮到 2560px、WebP 等格式轉成舊版 PowerPoint 也能開的 JPG/PNG；同一張圖只存一份。
 - 新功能：備份（打包成 zip，含還原說明）、匯入桌面版 `ppt_settings.json`（背景圖一起搬）。
-- 安裝／啟動：專案資料夾裡雙擊 `run_web.bat`（第一次自動安裝）或 `run_web_public.bat`（連對外連結一起開）；`python run_web.py` 也可以（缺套件時自動改用 `.venv`）。`scripts\windows\` 另有 `1-install.bat`、`2-start.bat`、`3-open-public.bat`、`backup.bat`。
+- 安裝／啟動：專案資料夾裡雙擊 `run.bat`（第一次自動安裝）或 `run_public.bat`（連對外連結一起開）；命令列用 `python main.py`（缺套件時自動改用 `.venv`）。`scripts\windows\` 另有 `1-install.bat`、`backup.bat`。
+- 整理：專案資料夾只留網頁版的入口；桌面版（tkinter）和它的存檔搬到 `legacy/desktop/`；專案模板留下的 `tmp.py`、`tmp.bat`、`project-installer/` 等刪掉。
 
 ## 桌面版 0.0.2 — 2026-07-03
 
