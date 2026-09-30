@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, empty, md %}
+{% block title %}匯出紀錄・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{{ page_head("EXPORTS", "匯出紀錄", "每按一次「匯出 PPT」就留一份：PPT 檔本身，加上當時每首歌的歌詞、歌序、背景和排版。之後要找某一週的 PPT，直接在這裡下載。") }}
+<section class="panel">
+  <div class="panel-head">全部 <span class="muted small">{{ exports|length }} 份</span>
+    <span class="tools"><input type="search" placeholder="搜尋…" data-filter="#exp-table" aria-label="搜尋匯出紀錄"></span></div>
+  {% if exports %}
+  <div class="table-wrap">
+    <table class="data" id="exp-table">
+      <thead><tr><th>聚會</th><th>檔名</th><th>張數</th><th>什麼時候、誰</th><th></th></tr></thead>
+      <tbody>
+      {% for e in exports %}
+        <tr>
+          <td class="nowrap"><b>{{ md(e.serviceDate) }}</b> {{ e.serviceName }}
+            {% if e.serviceId %}<div class="sub"><a href="/services/{{ e.serviceId }}">打開歌單</a></div>{% else %}<div class="sub">歌單已刪除</div>{% endif %}</td>
+          <td>{{ e.filename }}{% if e.warnings %}<div class="sub" title="{{ e.warnings|join('；') }}">⚠ {{ e.warnings|length }} 個提醒</div>{% endif %}</td>
+          <td class="nowrap">{{ e.slides }} 張<div class="sub">{{ (e.bytes / 1048576)|round(1) }} MB</div></td>
+          <td class="nowrap">{{ e.createdAt }}<div class="sub">{{ e.createdBy or "—" }}</div></td>
+          <td class="ops">
+            <button type="button" class="btn btn-sm" data-action="export-detail" data-id="{{ e.id }}">內容</button>
+            <a class="btn btn-sm btn-primary" href="/exports/{{ e.id }}/download">下載</a>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty("還沒有匯出過", "打開一份歌單，按右上角「匯出 PPT」。") }}
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/pages.js?v={{ asset_v }}"></script>{% endblock %}

@@ -8,7 +8,7 @@ from worship_ppt import security, store
 
 from .conftest import LOCAL_BASE, TUNNEL_HOST, remote_client
 
-PAGES = ["/", "/services", "/import", "/songs", "/backgrounds", "/styles"]
+PAGES = ["/", "/services", "/import", "/songs", "/backgrounds", "/styles", "/exports", "/settings", "/help"]
 
 
 @pytest.fixture
