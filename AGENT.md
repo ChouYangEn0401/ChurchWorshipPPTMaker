@@ -3,7 +3,7 @@
 Church worship PPT maker. Two apps live here:
 
 - **Web app** (`src/worship_ppt/`, Python 3.11, FastAPI + Jinja2 + vanilla JS, SQLite). This is the one being developed.
-- **Desktop app** (`main.py`, tkinter). Legacy; keep it working but don't extend it. Its save file (`ppt_settings.json`)
+- **Desktop app** (`legacy/desktop/main.py`, tkinter). Frozen legacy; don't extend it. Its save file (`ppt_settings.json`)
   is importable into the web app (`legacy.py`).
 
 User-facing text (UI, errors, docs, README, CHANGELOG) is Traditional Chinese written for non-technical church

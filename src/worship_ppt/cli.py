@@ -175,7 +175,7 @@ def cmd_import_legacy(args, paths: Paths) -> int:
     from . import legacy, store
 
     db = store.open_db(paths)
-    result = legacy.import_file(db, paths, args.path, "指令列")
+    result = legacy.import_file(db, paths, args.path or paths.legacy_file, "指令列")
     print(f"✅ 匯入 {len(result['songs'])} 首歌，歌單 #{result['serviceId']}")
     if result["missingImages"]:
         print("⚠️ 找不到這些背景圖：" + "、".join(result["missingImages"]))
@@ -229,7 +229,7 @@ def build_parser() -> argparse.ArgumentParser:
     gd.set_defaults(func=cmd_import_gdoc)
 
     lg = sub.add_parser("import-legacy", help="匯入桌面版的存檔")
-    lg.add_argument("path", nargs="?", default="ppt_settings.json")
+    lg.add_argument("path", nargs="?", default="", help="不填就讀 legacy/desktop/ppt_settings.json")
     lg.set_defaults(func=cmd_import_legacy)
 
     ex = sub.add_parser("export", help="把歌單匯出成 PPT")

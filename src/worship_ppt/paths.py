@@ -64,6 +64,11 @@ class Paths:
     def backups_dir(self) -> Path:
         return self.root / "backups"
 
+    @property
+    def legacy_file(self) -> Path:
+        """桌面版（legacy/desktop/main.py）的存檔：「匯入桌面版存檔」預設讀這個。"""
+        return self.root / "legacy" / "desktop" / "ppt_settings.json"
+
     def ensure(self) -> None:
         for d in (self.data_dir, self.images_dir, self.thumbs_dir, self.exports_dir, self.logs_dir):
             d.mkdir(parents=True, exist_ok=True)

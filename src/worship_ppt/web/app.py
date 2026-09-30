@@ -243,7 +243,7 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request):
         settings = store.get_settings(db)
-        legacy_file = paths.root / "ppt_settings.json"
+        legacy_file = paths.legacy_file
         return page(request, "index.html", "index", dash=store.dashboard(db), settings=settings,
                     legacy_available=legacy_file.exists(), today=date.today().isoformat())
 
@@ -301,7 +301,7 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
                     has_password=bool(db.kv_get("password_hash")),
                     sessions=security.active_sessions(db) if local else [],
                     themes=store.list_themes(db), styles=store.list_styles(db),
-                    legacy_path=str(paths.root / "ppt_settings.json"), data_dir=str(paths.data_dir), port=port)
+                    legacy_path=str(paths.legacy_file), data_dir=str(paths.data_dir), port=port)
 
     @app.get("/help", response_class=HTMLResponse)
     def help_page(request: Request):
@@ -621,7 +621,7 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
 
     @api.post("/legacy/import")
     def api_legacy(request: Request, body: dict = Body(default={})):
-        path = str(body.get("path") or paths.root / "ppt_settings.json")
+        path = str(body.get("path") or paths.legacy_file)
         return legacy.import_file(db, paths, path, _actor_name(request))
 
     @api.post("/backup")

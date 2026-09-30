@@ -51,12 +51,13 @@ def sheet(sample_html):
 
 @pytest.fixture
 def legacy_files(paths):
-    """把 repo 裡桌面版的存檔和背景圖複製到測試資料夾。"""
+    """把 repo 裡桌面版的存檔和背景圖（legacy/desktop/）複製到測試資料夾的同一個位置。"""
+    paths.legacy_file.parent.mkdir(parents=True, exist_ok=True)
     for name in ("ppt_settings.json", "pic1.png", "pic2.png", "pic3.png", "pic4.png", "background.jpg"):
-        src = REPO / name
+        src = REPO / "legacy" / "desktop" / name
         if src.exists():
-            shutil.copy(src, paths.root / name)
-    return paths.root / "ppt_settings.json"
+            shutil.copy(src, paths.legacy_file.parent / name)
+    return paths.legacy_file
 
 
 @pytest.fixture

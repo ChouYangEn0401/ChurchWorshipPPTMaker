@@ -1,7 +1,7 @@
-"""匯入桌面版（main.py）的存檔，背景圖也一起搬進背景庫。
+"""匯入桌面版（legacy/desktop/main.py）的存檔，背景圖也一起搬進背景庫。
 
 支援兩種舊格式：
-  A. main.py「儲存專案」的 ppt_settings.json：
+  A. 桌面版「儲存專案」的 ppt_settings.json：
      {"songs":[{title, lyrics:"[Verse]\\n...", background, lyrics_left, lyrics_top, styles:{Title,Segment,Lyrics}}]}
   B. 更舊的 songs.json：
      {"slidesize":"16:9","songs":[{title, background, font:{name,size,color}, lyrics:["第一頁\\n第二行", ...]}]}
@@ -40,7 +40,7 @@ def import_file(db: Database, paths: Paths, legacy_path: str | Path, by: str = "
     try:
         data = json.loads(legacy_path.read_text(encoding="utf-8-sig"))
     except FileNotFoundError:
-        raise AppError(f"找不到檔案：{legacy_path}", "請確認路徑，或把 ppt_settings.json 放到專案資料夾裡。", status=404)
+        raise AppError(f"找不到檔案：{legacy_path}", "請確認路徑。桌面版的範例存檔在專案資料夾的 legacy/desktop/ppt_settings.json。", status=404)
     except (OSError, ValueError) as exc:
         raise AppError(f"讀不懂這個檔案：{exc}", "要選桌面版「儲存專案」存出來的 .json 檔。")
     if not isinstance(data, dict) or not isinstance(data.get("songs"), list):
