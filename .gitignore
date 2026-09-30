@@ -1,5 +1,7 @@
-# Porject Settings
+# Project Settings
+# 網頁版的資料（歌詞庫、背景圖、匯出的 PPT、資料庫）都是教會自己的資料，不上傳
 data/
+backups/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
