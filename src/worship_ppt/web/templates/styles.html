@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, page_data %}
+{% block title %}排版・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{% call page_head("LAYOUTS", "排版", "字型、字的大小和顏色、歌詞放在哪裡。一首歌 = 一個背景 + 一個排版，可以隨意搭。改一個排版，用到它的歌下次匯出都會跟著變。") %}
+  <button type="button" class="btn btn-primary" id="btnNew">＋ 新排版</button>
+{% endcall %}
+<div class="row">
+  <label class="row small"><input type="checkbox" id="showArchived"> 顯示收起來的排版</label>
+  <span class="spacer"></span>
+  <label class="field inline"><span class="lbl">預覽用的背景</span><select id="previewTheme" style="max-width:220px"></select></label>
+</div>
+<div class="card-grid" id="grid"></div>
+{% endblock %}
+{% block data %}{{ page_data(data) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/styles.js?v={{ asset_v }}"></script>{% endblock %}

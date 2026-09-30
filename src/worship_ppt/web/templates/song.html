@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, page_data, empty, md %}
+{% block title %}{{ song.title }}・詩歌庫{% endblock %}
+{% block content %}
+{% call page_head("SONG", song.title, "這裡改的是詩歌庫裡的版本：以後把這首歌加進歌單，會用這裡的歌詞、歌序、背景和排版。已經做好的歌單不會被改到。") %}
+  <a class="btn btn-ghost" href="/songs">← 詩歌庫</a>
+  <span class="save-state" id="saveState"></span>
+  <button type="button" class="btn btn-danger" id="btnDelete">刪除</button>
+{% endcall %}
+
+<div class="cols">
+  <section class="panel">
+    <div class="panel-head">內容</div>
+    <div class="panel-body stack">
+      <div class="row">
+        <label class="field" style="flex:1 1 220px"><span class="lbl">歌名</span><input type="text" id="fTitle" maxlength="80"></label>
+        <label class="field" style="width:96px"><span class="lbl">調性</span><input type="text" id="fKey" maxlength="20"></label>
+      </div>
+      <label class="field"><span class="lbl">別名</span><input type="text" id="fAliases" placeholder="文件上可能出現的其他寫法，用頓號分開（例：聖靈請祢來、聖靈請你來充滿我心）">
+        <span class="hint-line">Google 文件寫別名時，也會認得是這首歌。</span></label>
+      <label class="field"><span class="lbl">常用歌序</span><input type="text" id="fSequence" placeholder="例：主 副 主 副 橋 副"></label>
+      <label class="field"><span class="lbl">歌詞</span><textarea class="lyrics" id="fLyrics" spellcheck="false"></textarea>
+        <span class="hint-line">用 [段落名] 分段；同一段裡空一行 = 換下一頁。</span></label>
+      <div class="look-row">
+        <label class="field"><span class="lbl">背景</span><select id="fTheme"></select></label>
+        <label class="field"><span class="lbl">排版</span><select id="fStyle"></select></label>
+      </div>
+      <label class="field"><span class="lbl">備註</span><textarea id="fNotes" rows="2" placeholder="例：副歌第二次要升調"></textarea></label>
+      <div class="warnlist" id="warn"></div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head">預覽 <span class="hint" id="count"></span></div>
+    <div class="panel-body"><div class="slides-grid" id="preview"></div></div>
+  </section>
+</div>
+
+<div class="cols">
+  <section class="panel">
+    <div class="panel-head">唱過的紀錄 <span class="hint">{{ history.uses|length }} 次</span></div>
+    {% for u in history.uses %}
+      <a class="item" href="/services/{{ u.service_id }}">
+        <span class="badge">{{ md(u.date) }}</span>
+        <span class="tt"><span class="nm">{{ u.name }}</span>
+          <span class="sub">歌序：{{ u.sequence or "照歌詞順序" }} · 背景：{{ u.theme_name or "—" }} · 排版：{{ u.style_name or "—" }}</span></span>
+        <span class="side">打開 →</span>
+      </a>
+    {% else %}
+      {{ empty("還沒有用在任何歌單裡") }}
+    {% endfor %}
+  </section>
+  <section class="panel">
+    <div class="panel-head">歌詞的舊版本 <span class="hint">每次歌詞或歌序被改，改之前的樣子都會留在這裡</span></div>
+    {% if history.revisions %}
+    <div class="panel-body">
+    {% for r in history.revisions %}
+      <details class="faq">
+        <summary><span class="badge">{{ r.created_at[:16] }}</span> <span class="small">{{ r.reason }}{% if r.created_by %} · {{ r.created_by }}{% endif %}</span></summary>
+        <div class="stack">
+          <span class="small muted">歌序：{{ r.sequence or "—" }}</span>
+          <pre class="lyr">{{ r.lyrics }}</pre>
+          <div><button type="button" class="btn btn-sm" data-restore="{{ r.id }}">還原成這個版本</button></div>
+        </div>
+      </details>
+    {% endfor %}
+    </div>
+    {% else %}
+      {{ empty("還沒有舊版本") }}
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block data %}{{ page_data(data) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/song.js?v={{ asset_v }}"></script>{% endblock %}

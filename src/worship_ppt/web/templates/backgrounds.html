@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, page_data %}
+{% block title %}背景・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{% call page_head("BACKGROUNDS", "背景", "上傳過的背景圖和純色底都在這裡，每一個都記得用過幾次、上次是哪一週。暗色遮罩可以讓太亮的圖片上字比較清楚。") %}
+  <button type="button" class="btn" id="btnColor">＋ 純色背景</button>
+{% endcall %}
+<div class="dropzone" id="drop" tabindex="0">
+  <b>＋ 上傳背景圖</b>
+  <span class="small">把圖片拖進來，或點這裡選檔案（可以一次選好幾張）。JPG、PNG 都可以；太大的照片會自動縮小。</span>
+</div>
+<div class="row">
+  <label class="row small"><input type="checkbox" id="showArchived"> 顯示收起來的背景</label>
+  <span class="spacer"></span>
+  <input type="search" id="q" placeholder="搜尋名稱…" style="max-width:220px" aria-label="搜尋背景">
+</div>
+<div class="card-grid" id="grid"></div>
+{% endblock %}
+{% block data %}{{ page_data(data) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/backgrounds.js?v={{ asset_v }}"></script>{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, empty, md %}
+{% block title %}詩歌庫・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{% call page_head("SONG LIBRARY", "詩歌庫", "每一首唱過的歌都在這裡：最新的歌詞、常用的歌序、上次用的背景和排版。匯出 PPT 時會自動更新；改過的歌詞舊版本都會留著。") %}
+  <button type="button" class="btn" data-action="new-song">＋ 新增一首歌</button>
+{% endcall %}
+<section class="panel">
+  <div class="panel-head">全部 <span class="muted small">{{ songs|length }} 首</span>
+    <span class="tools"><input type="search" placeholder="搜尋歌名、別名或一句歌詞…" data-filter="#song-table" aria-label="搜尋詩歌"></span></div>
+  {% if songs %}
+  <div class="table-wrap">
+    <table class="data" id="song-table">
+      <thead><tr><th>歌名</th><th>調性</th><th>常用歌序</th><th>用過</th><th>上次</th></tr></thead>
+      <tbody>
+      {% for s in songs %}
+        <tr class="clickable" data-href="/songs/{{ s.id }}" data-search="{{ s.title }} {{ s.aliases }} {{ s.lyrics[:600] }}">
+          <td><b>{{ s.title }}</b>{% if s.aliases %}<div class="sub">也叫：{{ s.aliases }}</div>{% endif %}</td>
+          <td>{{ s.key or "—" }}</td>
+          <td class="small">{{ s.sequence or "—" }}</td>
+          <td class="nowrap">{{ s.useCount }} 次</td>
+          <td class="nowrap">{{ md(s.lastUsed) if s.lastUsed else "—" }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {{ empty("詩歌庫還是空的", "匯出過一次 PPT，那份歌單裡的歌就會自動進來；也可以從首頁匯入桌面版的存檔。") }}
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/pages.js?v={{ asset_v }}"></script>{% endblock %}
