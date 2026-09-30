@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_data, md %}
+{% block title %}{{ md(service.date) }} {{ service.name }}・敬拜 PPT 產生器{% endblock %}
+{% block page_class %}editor-page{% endblock %}
+{% block content %}
+<div class="ed" id="ed">
+  <aside class="ed-col ed-left" aria-label="歌單">
+    <div class="svc-meta">
+      <div class="row"><a href="/services" class="btn btn-sm btn-ghost">← 所有歌單</a><span class="spacer"></span><span class="save-state" id="svcState"></span></div>
+      <label class="field"><span class="lbl">名稱</span><input id="svcName" type="text" maxlength="60"></label>
+      <div class="two">
+        <label class="field"><span class="lbl">日期</span><input id="svcDate" type="date"></label>
+        <label class="field"><span class="lbl">投影片比例</span>
+          <select id="svcSize"><option value="4:3">4:3</option><option value="16:9">16:9 寬螢幕</option></select></label>
+      </div>
+      <label class="row small"><input type="checkbox" id="svcFollow"> 照歌序排投影片</label>
+      <div class="team" id="svcTeam"></div>
+      <div class="row">
+        <button type="button" class="btn btn-sm" id="btnReimport" title="敬拜團改了文件？重新讀一次。已經挑好的背景和排版會保留。">🔄 從文件更新</button>
+        <button type="button" class="btn btn-sm" id="btnDuplicate" title="同樣的歌、背景、排版，換一個日期">複製成新的一週</button>
+      </div>
+    </div>
+    <div class="songlist" id="songList" aria-label="這份歌單的歌"></div>
+    <div class="addsong">
+      <div class="search-pop">
+        <input type="search" id="songSearch" placeholder="＋ 加歌：打歌名或一句歌詞…" autocomplete="off" aria-label="從詩歌庫找歌">
+        <div class="search-results" id="searchResults" hidden></div>
+      </div>
+      <button type="button" class="btn btn-sm" id="btnBlankSong">＋ 空白新歌</button>
+    </div>
+  </aside>
+
+  <section class="ed-col ed-mid" aria-label="編輯這首歌">
+    <div class="ed-head"><h2 id="itemHeading">…</h2><span class="spacer"></span><span class="save-state" id="itemState"></span></div>
+    <div class="ed-body" id="itemEditor"></div>
+  </section>
+
+  <section class="ed-col ed-right" aria-label="預覽">
+    <div class="ed-head">
+      <nav class="seg" id="previewMode" aria-label="預覽範圍">
+        <button type="button" data-mode="song" class="on">這首歌</button>
+        <button type="button" data-mode="all">整份</button>
+      </nav>
+      <span class="muted small" id="slideCount"></span>
+      <span class="spacer"></span>
+      <button type="button" class="btn btn-primary" id="btnExport">⬇ 匯出 PPT</button>
+    </div>
+    <div class="ed-body">
+      <div id="exportInfo" class="hint-line"></div>
+      <div id="previewWarn" class="warnlist"></div>
+      <div class="slides-grid" id="preview"></div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block data %}{{ page_data(data) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/editor.js?v={{ asset_v }}"></script>{% endblock %}

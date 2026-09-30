@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, empty, md %}
+{% block content %}
+{% set up = dash.upcoming %}
+{% call page_head("HOME", "這週的敬拜 PPT", "敬拜團在 Google 文件排好歌 → 這裡一鍵匯入 → 挑背景、看預覽 → 匯出 PPT。每一份做過的 PPT、用過的歌詞和背景都會留下來，下次直接沿用。") %}
+  <a class="btn btn-primary" href="/import">📥 從 Google 文件匯入</a>
+  <button type="button" class="btn" data-action="new-service">＋ 空白歌單</button>
+{% endcall %}
+
+<div class="stages">
+  <a class="stage {{ 'ok' if settings.gdoc_url else 'warning' }}" href="/import">
+    <span class="n">1 · 匯入</span><span class="t">讀 Google 文件</span>
+    <span class="s">歌名、歌序、歌詞一次抓進來；詩歌庫有的歌會直接套上次的背景和排版。</span>
+    <span class="c">{{ "已設定文件網址" if settings.gdoc_url else "還沒設定文件網址" }}</span>
+  </a>
+  <a class="stage" href="{{ '/services/%d' % up.id if up else '/services' }}">
+    <span class="n">2 · 調整</span><span class="t">挑背景、看預覽</span>
+    <span class="s">每首歌選背景和排版，右邊即時看到每一頁；字太多會自動縮小一點。</span>
+    <span class="c">可以開對外連結，讓同工用手機一起改</span>
+  </a>
+  <a class="stage" href="{{ '/services/%d' % up.id if up else '/services' }}">
+    <span class="n">3 · 匯出</span><span class="t">產生 PPT</span>
+    <span class="s">背景放在投影片母片裡，之後在 PowerPoint 換一張圖，整首歌一起換。</span>
+    <span class="c">做過的 PPT 都在「匯出紀錄」</span>
+  </a>
+</div>
+
+{% if up %}
+<section class="panel">
+  <div class="panel-head">
+    <span>下一場：{{ md(up.date) }} {{ up.name }}</span>
+    <span class="tools">
+      <button type="button" class="btn btn-sm" data-action="reimport" data-id="{{ up.id }}" title="敬拜團改了文件？重新讀一次（背景和排版會保留）">🔄 從文件更新</button>
+      <a class="btn btn-sm btn-primary" href="/services/{{ up.id }}">打開編輯 →</a>
+    </span>
+  </div>
+  {% if up.team %}<div class="panel-foot">{{ up.team }}</div>{% endif %}
+  {% for it in up["items"] %}
+    <a class="item" href="/services/{{ up.id }}#item-{{ it.id }}">
+      <span class="badge">{{ loop.index }}</span>
+      <span class="tt"><span class="nm">{{ it.title or "（沒有歌名）" }}{% if it.key %} <span class="chip">{{ it.key }}</span>{% endif %}</span>
+        <span class="sub">{{ it.sequence or "照歌詞順序" }}</span></span>
+      <span class="side">{% if not it.songId %}<span class="badge warn">新歌</span>{% endif %}</span>
+    </a>
+  {% else %}
+    {{ empty("這份歌單還沒有歌") }}
+  {% endfor %}
+  {% if up.lastExport %}<div class="panel-foot">上次匯出：{{ up.lastExport.created_at }}（{{ up.lastExport.slides }} 張）{% if up.lastExport.created_by %} · {{ up.lastExport.created_by }}{% endif %}</div>{% endif %}
+</section>
+{% endif %}
+
+<div class="metrics">
+  <a class="metric" href="/songs"><span class="k">詩歌庫</span><span class="v">{{ dash.counts.songs }} 首</span><span class="d">歌詞、歌序、上次的樣子</span></a>
+  <a class="metric" href="/backgrounds"><span class="k">背景</span><span class="v">{{ dash.counts.themes }} 個</span><span class="d">用過的圖片和底色</span></a>
+  <a class="metric" href="/styles"><span class="k">排版</span><span class="v">{{ dash.counts.styles }} 種</span><span class="d">字型、大小、位置</span></a>
+  <a class="metric" href="/exports"><span class="k">做過的 PPT</span><span class="v">{{ dash.counts.exports }} 份</span><span class="d">都可以再下載</span></a>
+</div>
+
+<div class="cols">
+  <section class="panel">
+    <div class="panel-head">最近的歌單<span class="hint"><a href="/services">全部 →</a></span></div>
+    {% for s in dash.recent %}
+      <a class="item" href="/services/{{ s.id }}">
+        <span class="badge {{ 'accent' if s.date >= today }}">{{ md(s.date) }}</span>
+        <span class="tt"><span class="nm">{{ s.name }}</span><span class="sub">{{ s.titles or "（還沒有歌）" }}</span></span>
+        <span class="side">{% if s.exportCount %}已匯出{% else %}<span class="muted">未匯出</span>{% endif %}</span>
+      </a>
+    {% else %}
+      {% call empty("還沒有任何歌單", "從 Google 文件匯入，或按「空白歌單」自己加歌。") %}{% endcall %}
+    {% endfor %}
+  </section>
+  <section class="panel">
+    <div class="panel-head">最近匯出的 PPT<span class="hint"><a href="/exports">全部 →</a></span></div>
+    {% for e in dash.recentExports %}
+      <a class="item" href="/exports/{{ e.id }}/download">
+        <span class="badge ok">⬇</span>
+        <span class="tt"><span class="nm">{{ e.filename }}</span><span class="sub">{{ e.createdAt }} · {{ e.slides }} 張{% if e.createdBy %} · {{ e.createdBy }}{% endif %}</span></span>
+        <span class="side">下載</span>
+      </a>
+    {% else %}
+      {{ empty("還沒有匯出過") }}
+    {% endfor %}
+  </section>
+</div>
+
+{% if is_local and legacy_available and dash.counts.songs == 0 %}
+<section class="panel">
+  <div class="panel-head">以前用桌面版做的歌</div>
+  <div class="panel-body toggle-row">
+    <span class="tt"><b>把桌面版的存檔（ppt_settings.json）搬進來</b>
+      <span class="sub">歌詞進詩歌庫、背景圖進背景庫、字型設定變成排版，另外建一份「桌面版匯入」的歌單。</span></span>
+    <button type="button" class="btn" data-action="legacy-import">匯入桌面版存檔</button>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/pages.js?v={{ asset_v }}"></script>{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, empty, md %}
+{% block title %}歌單・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{% call page_head("SERVICES", "歌單", "每一次聚會一份歌單，裡面記著當天唱的歌、歌序、背景和排版。以前的歌單都留著，可以直接「複製成新的一週」。") %}
+  <a class="btn btn-primary" href="/import">📥 從 Google 文件匯入</a>
+  <button type="button" class="btn" data-action="new-service">＋ 空白歌單</button>
+{% endcall %}
+
+<section class="panel">
+  <div class="panel-head">全部歌單 <span class="muted small">{{ services|length }} 份</span>
+    <span class="tools"><input type="search" placeholder="搜尋歌名、日期…" data-filter="#svc-table" aria-label="搜尋歌單"></span></div>
+  {% if services %}
+  <div class="table-wrap">
+    <table class="data" id="svc-table">
+      <thead><tr><th>日期</th><th>名稱</th><th>歌</th><th>匯出</th><th></th></tr></thead>
+      <tbody>
+      {% for s in services %}
+        <tr data-href="/services/{{ s.id }}" class="clickable {{ 'current' if s.date >= today and loop.first }} {{ 'past' if s.date < today }}">
+          <td class="nowrap"><b>{{ md(s.date) }}</b><div class="sub">{{ s.date[:4] }}</div></td>
+          <td>{{ s.name }}{% if s.team %}<div class="sub">{{ s.team }}</div>{% endif %}</td>
+          <td>{{ s.titles or "—" }}<div class="sub">{{ s.itemCount }} 首</div></td>
+          <td class="nowrap">{% if s.exportCount %}<span class="badge ok">{{ s.exportCount }} 次</span><div class="sub">{{ s.lastExport[5:16] }}</div>{% else %}<span class="badge">還沒</span>{% endif %}</td>
+          <td class="ops">
+            <a class="btn btn-sm" href="/services/{{ s.id }}">編輯</a>
+            <button type="button" class="btn btn-sm" data-action="duplicate-service" data-id="{{ s.id }}" data-date="{{ next_sunday }}" title="同樣的歌、背景、排版，換一個日期">複製成新的一週</button>
+            <button type="button" class="btn btn-sm btn-danger" data-action="delete-service" data-id="{{ s.id }}" data-name="{{ md(s.date) }} {{ s.name }}">刪除</button>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    {% call empty("還沒有任何歌單", "從 Google 文件匯入，或按「空白歌單」自己加歌。") %}
+      <a class="btn btn-primary" href="/import">📥 從 Google 文件匯入</a>
+    {% endcall %}
+  {% endif %}
+</section>
+{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/pages.js?v={{ asset_v }}"></script>{% endblock %}
