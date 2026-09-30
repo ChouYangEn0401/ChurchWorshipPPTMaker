@@ -1,40 +1,10 @@
 @echo off
-set VENV_DIR=venv
-
-:: 設定錯誤處理
-setlocal enabledelayedexpansion
-set ERROR_MSG=
-
-if not exist %VENV_DIR% (
-    echo [Setting Environment...]
-    python project-installer\setup_env.py || set ERROR_MSG=Setup Failed
+rem 敬拜 PPT 產生器（網頁版）：雙擊就會打開網頁。第一次會自動安裝（大約 1～2 分鐘）。
+rem 要讓同工從外面一起編輯，改雙擊 run_public.bat。
+call "%~dp0scripts\windows\_env.bat"
+if not exist "%VENV_PY%" (
+  call "%~dp0scripts\windows\1-install.bat" --auto || exit /b 1
 )
-
-if "%ERROR_MSG%"=="" (
-    echo [Activating Environment]
-    call %VENV_DIR%\Scripts\activate.bat || set ERROR_MSG=Failed To Activate Environment
-)
-
-if "%ERROR_MSG%"=="" (
-    echo [Update Check]
-    %VENV_DIR%\Scripts\python.exe project-installer\update_check.py || set ERROR_MSG=Update Check Failed
-)
-
-if "%ERROR_MSG%"=="" (
-    echo [Start Running]
-    %VENV_DIR%\Scripts\python.exe main.py || set ERROR_MSG=Program Execution Failed
-)
-
-if "%ERROR_MSG%"=="" (
-    echo [Deactivating Environment]
-    call %VENV_DIR%\Scripts\deactivate.bat
-)
-
-if not "%ERROR_MSG%"=="" (
-    echo.
-    echo [ERROR]: %ERROR_MSG%
-    pause
-)
-
-echo [Process Completed]
-exit /b
+title 敬拜 PPT 產生器（關掉這個視窗就會停止）
+"%VENV_PY%" "%ROOT%\main.py" web %*
+if errorlevel 1 pause

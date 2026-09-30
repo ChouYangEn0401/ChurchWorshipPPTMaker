@@ -13,9 +13,10 @@ English; comments/docstrings are Chinese, matching the existing files.
 ## Run / test
 
 ```bat
-scripts\windows\1-install.bat        :: venv + deps + init
-scripts\windows\2-start.bat          :: http://127.0.0.1:8788
-set PYTHONPATH=src & .venv\Scripts\python.exe -m pytest -q
+run.bat                              :: first run installs (.venv + deps + init), then http://127.0.0.1:8788
+run_public.bat                       :: same + Cloudflare quick tunnel
+python main.py [web|init|import-gdoc|…]  :: root entry point; re-runs itself with .venv if deps are missing
+.venv\Scripts\python.exe -m pytest -q
 ```
 
 Tests use a temp `WORSHIP_PPT_HOME` (see `tests/conftest.py`); never point them at the real `data/`.

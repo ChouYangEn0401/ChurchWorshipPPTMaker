@@ -12,21 +12,23 @@
 
 ## 開始用（Windows）
 
-在專案資料夾裡，**雙擊 `run_web.bat`**，瀏覽器會自動打開 <http://127.0.0.1:8788>。
+在專案資料夾裡，**雙擊 `run.bat`**，瀏覽器會自動打開 <http://127.0.0.1:8788>。
 第一次會先自動安裝（建立 `.venv`、裝套件、建資料庫，大約 1～2 分鐘）。**關掉黑色視窗就會停止。**
 
-| 專案資料夾裡的檔案 | 做什麼 |
+| 專案資料夾裡 | 做什麼 |
 |---|---|
-| `run_web.bat` | 打開網頁版（只有這台電腦能用） |
-| `run_web_public.bat` | 打開網頁版 ＋ Cloudflare 對外連結（同工用手機一起編輯；要先在「設定」設團隊密碼） |
-| `run_web.py` | 同上的 Python 入口：`python run_web.py`、`python run_web.py web --public`、`python run_web.py --help` |
-
-`scripts\windows\` 裡還有分開的 `1-install.bat`（只安裝）、`2-start.bat`、`3-open-public.bat`、`backup.bat`。
+| `run.bat` | 打開網頁版（只有這台電腦能用） |
+| `run_public.bat` | 打開網頁版 ＋ Cloudflare 對外連結（同工用手機一起編輯；要先在「設定」設團隊密碼） |
+| `main.py` | 同樣的入口給命令列用：`python main.py`、`python main.py web --public`、`python main.py --help` |
+| `src/` | 程式本體（`src/worship_ppt/`） |
+| `scripts/windows/` | `1-install.bat`（只安裝）、`backup.bat`（備份） |
+| `legacy/desktop/` | 舊的桌面版（tkinter）和它的存檔，留著備查 |
+| `data/` | 你們的資料（自動產生，不上傳） |
 
 | 我要… | 怎麼做 |
 |---|---|
 | 做這週的 PPT | 首頁 →「從 Google 文件匯入」→ 讀取文件 → 建立歌單 → 挑背景 → 右上角「匯出 PPT」 |
-| 讓同工從手機一起改 | 「設定」→ 設團隊密碼 →「開啟對外連結」→ 把網址傳到 LINE 群組；或直接雙擊 `run_web_public.bat` |
+| 讓同工從手機一起改 | 「設定」→ 設團隊密碼 →「開啟對外連結」→ 把網址傳到 LINE 群組；或直接雙擊 `run_public.bat` |
 | 找以前的 PPT | 「匯出紀錄」→ 下載 |
 | 看某首歌以前怎麼唱 | 「詩歌庫」→ 點那首歌：唱過的日期、歌序、背景都在；改過的歌詞舊版本也在 |
 | 備份 | 「設定 → 資料 → 現在備份」，或雙擊 `scripts\windows\backup.bat` |
@@ -97,7 +99,7 @@ set PYTHONPATH=src
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-指令列（`python run_web.py …`；或 `set PYTHONPATH=src` 之後 `python -m worship_ppt …`）：`web [--port 8788] [--public] [--no-browser]`、`init [--gdoc-url URL]`、`password`、`import-gdoc [--url] [--date]`、`import-legacy [路徑]`、`export 歌單編號 [--out 檔名]`、`backup`。
+指令列（`python main.py …`）：`web [--port 8788] [--public] [--no-browser]`、`init [--gdoc-url URL]`、`password`、`import-gdoc [--url] [--date]`、`import-legacy [路徑]`、`export 歌單編號 [--out 檔名]`、`backup`。
 
 程式架構、規則（例如 `lyrics.py` 和 `static/js/lyrics.js` 要一起改）寫在 [AGENT.md](AGENT.md)。
 

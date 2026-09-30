@@ -21,7 +21,7 @@ if not exist "%VENV_PY%" (
 echo ... 安裝需要的套件（第一次大約 1～2 分鐘）
 "%VENV_PY%" -m pip install --disable-pip-version-check -q --upgrade pip || goto :fail
 "%VENV_PY%" -m pip install --disable-pip-version-check -q -r "%ROOT%\requirements.txt" || goto :fail
-"%VENV_PY%" -m worship_ppt init || goto :fail
+"%VENV_PY%" "%ROOT%\main.py" init || goto :fail
 echo.
 set "CF="
 for /f "delims=" %%P in ('where cloudflared 2^>nul') do if not defined CF set "CF=%%P"
@@ -38,7 +38,7 @@ if /i "%~1"=="--auto" (
   echo 安裝完成！接著打開網頁…
   exit /b 0
 )
-echo 安裝完成！下一步：雙擊專案資料夾裡的 run_web.bat 打開網頁。
+echo 安裝完成！下一步：雙擊專案資料夾裡的 run.bat 打開網頁。
 pause
 exit /b 0
 :fail

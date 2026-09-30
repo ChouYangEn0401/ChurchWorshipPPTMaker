@@ -17,7 +17,7 @@ RESTORE_NOTE = """還原方式：
 1. 先關掉敬拜 PPT 產生器（關掉黑色視窗）。
 2. 把專案資料夾裡的 data 資料夾改名（例如 data.old），留著以防萬一。
 3. 把這個 zip 裡的 data 資料夾整個解壓縮到專案資料夾。
-4. 重新開啟（雙擊 scripts\\windows\\2-start.bat）。
+4. 重新開啟（雙擊專案資料夾裡的 run.bat）。
 """
 
 
