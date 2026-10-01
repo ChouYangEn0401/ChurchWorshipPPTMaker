@@ -82,6 +82,25 @@ def test_unknown_host_is_refused(app):
     assert old.get("/").status_code == 421
 
 
+def test_csp_gateway_host_wildcard(paths, monkeypatch):
+    """CloudServicesPlatform 的服務分享（它的 ADR 0016）：門口保留自己的網址當 Host、帶 Cloudflare 標頭轉進來。
+    *.trycloudflare.com 打開之後，這種請求要「被認得」而且「被當成遠端」——也就是照樣要團隊密碼。"""
+    from worship_ppt.web.app import create_app
+
+    monkeypatch.setenv("WORSHIP_PPT_ALLOWED_HOSTS", "*.trycloudflare.com")
+    app = create_app(paths, port=8788)
+    share = "https://shared-ppt-via-csp.trycloudflare.com"
+    via_gate = TestClient(app, base_url=share, follow_redirects=False,
+                          headers={"cf-connecting-ip": "203.0.113.9", "cf-ray": "x", "Origin": share})
+    set_password(app)
+    r = via_gate.get("/")
+    assert r.status_code == 303 and r.headers["location"].startswith("/login"), "remote: team password still required"
+    assert via_gate.post("/api/services", json={}).status_code in (401, 403), "and no write without a login"
+    for host in ("https://trycloudflare.com", "https://evil-trycloudflare.com", "https://x.trycloudflare.com.evil.io"):
+        other = TestClient(app, base_url=host, headers={"cf-connecting-ip": "1.2.3.4"})
+        assert other.get("/").status_code == 421, host
+
+
 def test_image_upload_and_media(local):
     import io
     from PIL import Image

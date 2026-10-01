@@ -76,6 +76,13 @@
 - 關掉對外連結（或關掉黑色視窗）網址就失效、所有人登出；下次開是新網址。
 - 開對外連結、改密碼、備份、匯入舊資料只能在這台電腦上做。
 
+### 也可以交給 CloudServicesPlatform 分享
+
+CSP 的「🌐 服務」頁可以幫你開這個網頁的對外網址（CSP 的 ADR 0016）：同工先登入 CSP、按「開啟」，
+再用團隊密碼登入這裡——兩層。CSP 的門口會保留它自己的網址轉進來（不會被當成「這台電腦」），所以
+這裡要認得那個網址：環境變數 `WORSHIP_PPT_ALLOWED_HOSTS=*.trycloudflare.com`（CSP 的 registry.toml
+已經幫你帶，從 CSP 啟動就不用自己設）。可以寫完整網址，或 `*.網域` 比對子網域。
+
 做法參考 CloudServicesPlatform（Host 檢查、CSRF、登入次數限制、`__Host-` cookie），讀 Google 文件的方式參考 LINEBotForChurch 讀 Google Sheet（公開連結、不需要金鑰）。
 
 ## 資料在哪裡

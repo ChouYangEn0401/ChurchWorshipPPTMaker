@@ -113,7 +113,20 @@ def host_allowed(client: ClientInfo, headers, port: int, tunnel_host: str | None
         return req_port in (port, None) and host in LOCAL_HOSTS
     if tunnel_host and host == tunnel_host and req_port in (None, 443):
         return True
-    return host in extra_hosts and req_port in (None, 443)
+    return _matches_extra(host, extra_hosts) and req_port in (None, 443)
+
+
+def _matches_extra(host: str, extra_hosts: set[str]) -> bool:
+    """WORSHIP_PPT_ALLOWED_HOSTS：完整名稱，或 *.網域（例：*.trycloudflare.com）。
+
+    萬用字元是給 CloudServicesPlatform 的「服務分享」用的（它的 ADR 0016）：每次分享的網址都不一樣，
+    而且門口會保留原本的 Host 轉進來（不偽裝成本機），所以這裡要認得那個網址。trycloudflare.com 的 DNS
+    由 Cloudflare 控制，別人沒辦法讓它指到 127.0.0.1，所以不會因此打開 DNS rebinding。
+    *.網域 只比對真正的子網域（a.trycloudflare.com），不包含網域本身，也不會比對到 xtrycloudflare.com。"""
+    if host in extra_hosts:
+        return True
+    return any(entry.startswith("*.") and host.endswith(entry[1:]) and len(host) > len(entry) - 1
+               for entry in extra_hosts)
 
 
 def same_origin(headers, client: ClientInfo) -> bool:
