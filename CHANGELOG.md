@@ -1,5 +1,16 @@
 # 版本紀錄
 
+## 0.2.0 改用 CloudServicesPlatform 的 SDK — 2026-10-07
+
+- 改寫：登入、session、CSRF、Host 檢查（原本的 `security.py`）與對外連結（原本的 `tunnel.py`）改用 CloudServicesPlatform 的
+  SDK（`isdcsp` 1.2，放在 `vendor/` 的 wheel，`1-install.bat` 會一起裝）。登入頁與擋下來的頁面長相、用字都跟以前一樣。
+- 改善：**程式當掉時對外連結一定一起關**（cloudflared 跑在 Windows 的 Job Object 裡）。以前當掉會留下一個開著的通道。
+- 改善：登入後跳回原頁的網址會擋控制字元；任何 Cloudflare 標頭都算「從外面來」；同一個 IPv6 網段共用一份猜密碼次數。
+- 改變：密碼錯太多次的回應是 429（以前 401）；從外面登入的紀錄換到 `data\sessions.sqlite3`，**更新後同工要重新登入一次**。
+  團隊密碼不用重設（格式一樣）。
+- 新增：`service.isdcsp.toml`，讓 CloudServicesPlatform 用這個專案自己的宣告接它；被 CSP 啟動時用它給的埠（`CSP_PORT`）。
+- 整理：網頁版整條線合併回主線（`master-init`）。
+
 ## 0.1.0 網頁版 — 2026-09-30
 
 - 新功能：**網頁版重寫**（`src/worship_ppt/`），取代之前的 `webapp/` 試作版。本機打開 <http://127.0.0.1:8788> 就能用，不用登入。
