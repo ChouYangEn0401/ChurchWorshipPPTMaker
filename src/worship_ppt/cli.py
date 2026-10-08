@@ -127,13 +127,16 @@ def cmd_init(args, paths: Paths) -> int:
 
 
 def cmd_password(args, paths: Paths) -> int:
-    from . import security, store
+    from isdcsp import passwords
+
+    from . import store
+    from .web.app import open_sessions
 
     db = store.open_db(paths)
     if args.clear:
         with db.tx() as conn:
             conn.execute("DELETE FROM kv WHERE key='password_hash'")
-        security.delete_all_sessions(db)
+        open_sessions(paths).delete_all()
         print("✅ 已清除團隊密碼（外面的人會完全連不進來）")
         return 0
     first = getpass.getpass("新的團隊密碼（輸入時不會顯示）：")
@@ -144,8 +147,8 @@ def cmd_password(args, paths: Paths) -> int:
     if len(first) < 6:
         print("❌ 密碼至少要 6 個字")
         return 1
-    db.kv_set("password_hash", security.hash_password(first))
-    security.delete_all_sessions(db)
+    db.kv_set("password_hash", passwords.hash_password(first))
+    open_sessions(paths).delete_all()
     print("✅ 團隊密碼已設定（之前登入的人要重新登入）")
     return 0
 

@@ -4,9 +4,11 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from worship_ppt import security, store
+from isdcsp.passwords import PasswordHasher, ScryptParams
 
-from .conftest import LOCAL_BASE, TUNNEL_HOST, remote_client
+from worship_ppt import store
+
+from .conftest import LOCAL_BASE, PEER, TUNNEL_HOST, remote_client
 
 PAGES = ["/", "/services", "/import", "/songs", "/backgrounds", "/styles", "/exports", "/settings", "/help"]
 
@@ -19,7 +21,7 @@ def seeded(app, sheet):
 
 
 def set_password(app, pw="敬拜團密碼123"):
-    app.state.db.kv_set("password_hash", security.hash_password(pw, n=2 ** 10))
+    app.state.db.kv_set("password_hash", PasswordHasher(ScryptParams(n=2 ** 10)).hash(pw))
     return pw
 
 
@@ -67,18 +69,19 @@ def test_stale_version_gets_409_with_who_changed_it(local, seeded):
 
 
 def test_cross_site_post_is_blocked_even_locally(app):
-    client = TestClient(app, base_url=LOCAL_BASE, headers={"Origin": "https://evil.example"})
+    client = TestClient(app, base_url=LOCAL_BASE, headers={"Origin": "https://evil.example"}, client=PEER)
     assert client.post("/api/services", json={}).status_code == 403
-    no_origin = TestClient(app, base_url=LOCAL_BASE)
+    no_origin = TestClient(app, base_url=LOCAL_BASE, client=PEER)
     assert no_origin.post("/api/services", json={}).status_code == 403
 
 
 def test_unknown_host_is_refused(app):
     # DNS rebinding：惡意網域指到 127.0.0.1
-    client = TestClient(app, base_url="http://evil.example:8788")
+    client = TestClient(app, base_url="http://evil.example:8788", client=PEER)
     assert client.get("/").status_code == 421
     # 舊的 / 別人的 trycloudflare 網址
-    old = TestClient(app, base_url="https://old-name-here.trycloudflare.com", headers={"cf-connecting-ip": "1.2.3.4"})
+    old = TestClient(app, base_url="https://old-name-here.trycloudflare.com", headers={"cf-connecting-ip": "1.2.3.4"},
+                     client=PEER)
     assert old.get("/").status_code == 421
 
 
@@ -90,14 +93,14 @@ def test_csp_gateway_host_wildcard(paths, monkeypatch):
     monkeypatch.setenv("WORSHIP_PPT_ALLOWED_HOSTS", "*.trycloudflare.com")
     app = create_app(paths, port=8788)
     share = "https://shared-ppt-via-csp.trycloudflare.com"
-    via_gate = TestClient(app, base_url=share, follow_redirects=False,
+    via_gate = TestClient(app, base_url=share, follow_redirects=False, client=PEER,
                           headers={"cf-connecting-ip": "203.0.113.9", "cf-ray": "x", "Origin": share})
     set_password(app)
     r = via_gate.get("/")
     assert r.status_code == 303 and r.headers["location"].startswith("/login"), "remote: team password still required"
     assert via_gate.post("/api/services", json={}).status_code in (401, 403), "and no write without a login"
     for host in ("https://trycloudflare.com", "https://evil-trycloudflare.com", "https://x.trycloudflare.com.evil.io"):
-        other = TestClient(app, base_url=host, headers={"cf-connecting-ip": "1.2.3.4"})
+        other = TestClient(app, base_url=host, headers={"cf-connecting-ip": "1.2.3.4"}, client=PEER)
         assert other.get("/").status_code == 421, host
 
 
@@ -139,7 +142,7 @@ def test_remote_requires_login_then_works(app, seeded):
     assert bad.status_code == 401
     login(app, client, pw)
     assert client.get(f"/services/{seeded['id']}").status_code == 200
-    cookie = client.cookies.get(security.TUNNEL_COOKIE)
+    cookie = client.cookies.get("__Host-wppt_session")      # https：只屬於這個網址、只走 https
     assert cookie
     item = seeded["items"][0]
     r = client.patch(f"/api/items/{item['id']}", json={"key": "G", "version": item["version"]})
@@ -173,7 +176,7 @@ def test_login_throttle_blocks_after_repeated_failures(app):
     for _ in range(8):
         client.post("/login", data={"password": "nope", "next": "/"})
     r = client.post("/login", data={"password": "敬拜團密碼123", "next": "/"})
-    assert r.status_code == 401 and "錯太多次" in r.text
+    assert r.status_code == 429 and "錯太多次" in r.text      # 429：太多次（以前回 401）
     other = remote_client(app, ip="198.51.100.10")
     assert other.post("/login", data={"password": "敬拜團密碼123", "next": "/"}).status_code == 303
 

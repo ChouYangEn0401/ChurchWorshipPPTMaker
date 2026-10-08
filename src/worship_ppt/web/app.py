@@ -1,6 +1,7 @@
 """網頁：頁面 + JSON API。create_app() 回傳一個 FastAPI app（測試也用它）。
 
-所有請求先經過 gate()：分辨本機／遠端、檢查 Host、遠端要登入、改資料要同源（遠端再加 CSRF token）。
+所有請求先經過門口（CloudServicesPlatform 的 SDK：isdcsp.web.Site）：分辨本機／遠端、檢查 Host、遠端要登入、
+改資料要同源（遠端再加 CSRF token）、加上安全標頭。這裡只決定規則（哪些路徑公開、哪些只限本機）和頁面長相。
 頁面用 Jinja2 在伺服器畫好外框，編輯畫面的互動（即時預覽、自動存檔）交給 static/js/ 底下的程式。
 """
 
@@ -16,17 +17,19 @@ from contextlib import asynccontextmanager
 from datetime import date, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, Body, FastAPI, File, Form, Request, UploadFile
+import isdcsp
+from fastapi import APIRouter, Body, FastAPI, File, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from isdcsp import passwords, web
+from isdcsp.tunnel import PublicTunnel, TunnelDriverError
 
-from .. import __version__, backup, images as imagestore, legacy, pptx_builder, security, store
+from .. import __version__, backup, images as imagestore, legacy, pptx_builder, store
 from ..errors import AppError, Forbidden, NotFound
 from ..gdoc import fetch_sheet, label_mismatches
 from ..paths import Paths
-from ..tunnel import TunnelManager
 
 HERE = Path(__file__).resolve().parent
 STATIC = HERE / "static"
@@ -38,10 +41,22 @@ mimetypes.add_type("text/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("image/svg+xml", ".svg")
 
-PUBLIC_PATHS = {"/login", "/healthz", "/favicon.ico"}
+PUBLIC_PATHS = ("/healthz", "/favicon.ico", "/static/")   # 不用登入就能看的（/login 由門口自己處理）
 LOCAL_ONLY_PREFIXES = ("/api/tunnel", "/api/settings/password", "/api/legacy", "/api/backup", "/api/sessions")
 IN_APP_MARKERS = ("Line/", "FBAN", "FBAV", "Instagram", "MicroMessenger", "Telegram")
+# 擋下來時給同工看的頁面與用字（原因代碼是 isdcsp.web.DENIALS 的）
+DENY_PAGES = {
+    "not_open": ("blocked.html", "這個網站還沒開放從外面使用", "請負責的同工在主機電腦上到「設定」設定團隊密碼。"),
+    "host": ("error.html", "這個網址已經失效了", "請跟負責的同工要新的網址。"),
+    "local_only": ("error.html", "這個功能只能在主機電腦上使用", ""),
+    "origin": ("error.html", "請求來源不對，已經擋下來了", "請直接從這個網站的頁面操作。"),
+    "csrf": ("error.html", "頁面放太久了，請重新整理後再試一次", ""),
+}
+# 在 SDK 的基本 CSP 上放寬兩項：頁面用到 style 屬性；其他都只准這個網站自己的東西
+CSP = {"default-src": "'self'", "style-src": "'self' 'unsafe-inline'"}
 PPTX_TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+INSTALL_HINT = ("要讓同工從外面一起編輯，請先安裝 cloudflared：打開「命令提示字元」輸入 "
+                "winget install --id Cloudflare.cloudflared ，裝好後再按一次。")
 
 
 def _asset_version() -> str:
@@ -53,86 +68,49 @@ def _asset_version() -> str:
     return h.hexdigest()[:10]
 
 
+def open_sessions(paths: Paths) -> web.SessionStore:
+    """遠端登入的同工（SDK 的 session：只存摘要、閒置 14 天、最長 60 天）。網頁與指令列用同一個檔案。"""
+    return web.SessionStore(paths.data_dir / "sessions.sqlite3")
+
+
 def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: list[str] | None = None,
                autostart_tunnel: bool = False) -> FastAPI:
     paths = paths or Paths.discover()
     db = store.open_db(paths)
-    throttle = security.LoginThrottle()
-    tunnel = TunnelManager(port, paths.logs_dir / "cloudflared.log",
-                           configured_path=lambda: store.get_settings(db).get("cloudflared_path", ""),
-                           on_stop=lambda: security.delete_all_sessions(db), command=tunnel_command)
-    extra_hosts = {h.strip().lower() for h in os.environ.get("WORSHIP_PPT_ALLOWED_HOSTS", "").split(",") if h.strip()}
     templates = Jinja2Templates(directory=str(TEMPLATES))
     asset_v = _asset_version()
     templates.env.globals.update(version=__version__, asset_v=asset_v)
+    extra_hosts = {h.strip().lower() for h in os.environ.get("WORSHIP_PPT_ALLOWED_HOSTS", "").split(",") if h.strip()}
+    # 對外連結：CloudServicesPlatform 的 SDK（isdcsp.tunnel）。cloudflared 跑在 Job Object 裡：這個程式當掉，連結一起關。
+    tunnel = PublicTunnel(port, cloudflared_path=lambda: store.get_settings(db).get("cloudflared_path", ""),
+                          command=tunnel_command, log_file=paths.logs_dir / "cloudflared.log")
+    # 門口：本機／遠端、Host、登入、CSRF、回應標頭——都是 SDK 的 isdcsp.web.Site；這裡只決定規則與長相。
+    site = web.Site(
+        password=lambda: db.kv_get("password_hash"), public=PUBLIC_PATHS, local_only=LOCAL_ONLY_PREFIXES,
+        allowed_hosts=lambda: tunnel.hosts() | extra_hosts, port=port,
+        store=open_sessions(paths), csp=CSP, cookie="wppt_session",
+        title="敬拜 PPT 產生器", default_name="同工",
+        page=lambda view: _login_html(view), deny=lambda denial: _deny_html(denial))
+    tunnel.on_stop = site.logout_everyone      # 對外連結關掉或斷掉：遠端登入的人全部登出
 
     @asynccontextmanager
     async def lifespan(_app):
         if autostart_tunnel:
             try:
                 tunnel.start()
-            except AppError as exc:
-                log.warning("tunnel autostart failed: %s", exc.message)
+            except TunnelDriverError as exc:
+                log.warning("tunnel autostart failed: %s", exc)
         yield
         tunnel.stop()
 
     app = FastAPI(title="敬拜 PPT 產生器", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
-    app.state.db, app.state.paths, app.state.tunnel, app.state.throttle = db, paths, tunnel, throttle
+    app.state.db, app.state.paths, app.state.tunnel, app.state.site = db, paths, tunnel, site
     app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 
-    # ------------------------------------------------------------------
-    # 門口：本機／遠端、Host、登入、CSRF、回應標頭
-    # ------------------------------------------------------------------
-    def _is_api(path: str) -> bool:
-        return path.startswith("/api/")
-
-    def _deny(request: Request, status: int, message: str, hint: str = "", template: str = "error.html"):
-        if _is_api(request.url.path):
-            return JSONResponse({"error": "denied", "message": message, "hint": hint}, status_code=status)
-        return templates.TemplateResponse(request, template, _base_ctx(request, message=message, hint=hint),
-                                          status_code=status)
-
     @app.middleware("http")
-    async def gate(request: Request, call_next):
-        client = security.classify(request.headers, request.client.host if request.client else None)
-        request.state.client = client
-        request.state.session = None
-        request.state.actor = {"name": "本機", "local": True} if client.local else None
-        if not security.host_allowed(client, request.headers, port, tunnel.current_host(), extra_hosts):
-            return Response("這個網址已經失效了，請跟負責的同工要新的網址。", status_code=421,
-                            media_type="text/plain; charset=utf-8")
-        path = request.url.path
-        public = path in PUBLIC_PATHS or path.startswith("/static/")
-        if not client.local and not public:
-            if not db.kv_get("password_hash"):
-                response = _deny(request, 403, "這個網站還沒開放從外面使用",
-                                 "請負責的同工在主機電腦上到「設定」設定團隊密碼。", "blocked.html")
-                return _finish(response, client, path)
-            token = request.cookies.get(security.cookie_name(client))
-            session = security.resolve_session(db, token, client)
-            if session is None:
-                if _is_api(path):
-                    return _finish(JSONResponse({"error": "login", "message": "登入已經過期，請重新整理頁面再登入一次。"},
-                                                status_code=401), client, path)
-                target = path + (("?" + request.url.query) if request.url.query else "")
-                return _finish(RedirectResponse("/login?next=" + _quote(target), status_code=303), client, path)
-            request.state.session = session
-            request.state.actor = {"name": session["name"] or "同工", "local": False}
-            if path.startswith(LOCAL_ONLY_PREFIXES):
-                return _finish(_deny(request, 403, "這個功能只能在主機電腦上使用"), client, path)
-        if request.method not in ("GET", "HEAD", "OPTIONS"):
-            if not security.same_origin(request.headers, client):
-                return _finish(_deny(request, 403, "請求來源不對，已經擋下來了", "請直接從這個網站的頁面操作。"), client, path)
-            if not client.local and path not in ("/login", "/logout"):  # 這兩個是一般表單，只檢查同源
-                expected = request.state.session["csrf"] if request.state.session else ""
-                if not expected or request.headers.get("x-csrf-token") != expected:
-                    return _finish(_deny(request, 403, "頁面放太久了，請重新整理後再試一次"), client, path)
+    async def caching(request: Request, call_next):
         response = await call_next(request)
-        return _finish(response, client, path)
-
-    def _finish(response: Response, client: security.ClientInfo, path: str) -> Response:
-        for key, value in security.security_headers(client).items():
-            response.headers.setdefault(key, value)
+        path = request.url.path
         if path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-cache"
         elif path.startswith("/media/"):
@@ -140,6 +118,11 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
         else:
             response.headers.setdefault("Cache-Control", "no-store")
         return response
+
+    app.add_middleware(web.Middleware, site=site)      # 最後加的最先跑：每個請求都先經過門口
+
+    def _is_api(path: str) -> bool:
+        return path.startswith("/api/")
 
     # ------------------------------------------------------------------
     # 錯誤
@@ -170,18 +153,27 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
     # ------------------------------------------------------------------
     # 頁面共用
     # ------------------------------------------------------------------
+    def _is_local(request: Request) -> bool:
+        client = web.client(request)
+        return bool(client and client.is_local)
+
+    def _actor(request: Request) -> dict | None:
+        who = isdcsp.principal(request)
+        if who is None or who.kind == "anonymous":
+            return None
+        if who.kind == "owner":
+            return {"name": "本機", "local": True}
+        return {"name": who.name or "同工", "local": False}
+
     def _actor_name(request: Request) -> str:
-        actor = getattr(request.state, "actor", None) or {}
-        return actor.get("name", "")
+        return (_actor(request) or {}).get("name", "")
 
     def _base_ctx(request: Request, **ctx) -> dict:
-        client = getattr(request.state, "client", None)
-        session = getattr(request.state, "session", None)
+        local = _is_local(request)
         ua = request.headers.get("user-agent", "")
         return {
-            "actor": getattr(request.state, "actor", None), "is_local": bool(client and client.local),
-            "csrf_token": session["csrf"] if session else "",
-            "tunnel": tunnel.status() if client and client.local else None,
+            "actor": _actor(request), "is_local": local, "csrf_token": web.csrf_token(request),
+            "tunnel": tunnel.status() if local else None,
             "flash": request.query_params.get("msg"), "flash_level": request.query_params.get("level", "ok"),
             "in_app_browser": any(m in ua for m in IN_APP_MARKERS), "nav": ctx.pop("nav", ""), **ctx,
         }
@@ -190,48 +182,24 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
         return templates.TemplateResponse(request, name, _base_ctx(request, nav=nav, **ctx))
 
     # ------------------------------------------------------------------
-    # 登入
+    # 登入頁與擋下來的頁面：邏輯是 SDK 的（isdcsp.web.Site），長相與用字是這裡的
     # ------------------------------------------------------------------
-    @app.get("/login", response_class=HTMLResponse)
-    def login_page(request: Request, next: str = "/"):
-        if request.state.client.local:
-            return RedirectResponse(_safe_next(next), status_code=303)
-        return templates.TemplateResponse(request, "login.html", _base_ctx(request, next=_safe_next(next), error=""))
+    def _render(template: str, scope: dict, **ctx) -> str:
+        request = Request(scope)
+        return templates.get_template(template).render({**_base_ctx(request, **ctx), "request": request})
 
-    @app.post("/login")
-    def login(request: Request, password: str = Form(""), name: str = Form(""), next: str = Form("/")):
-        client = request.state.client
-        target = _safe_next(next)
-        if client.local:
-            return RedirectResponse(target, status_code=303)
-        wait = throttle.blocked_for(client)
-        error = ""
-        if wait:
-            error = f"密碼錯太多次了，請 {max(1, wait // 60)} 分鐘後再試。"
-        elif not security.verify_password(password, db.kv_get("password_hash")):
-            throttle.failed(client)
+    def _login_html(view: web.LoginView) -> str:
+        if view.error == "wrong":
             error = "密碼不對，再試一次。"
-        if error:
-            return templates.TemplateResponse(request, "login.html",
-                                              _base_ctx(request, next=target, error=error, name=name),
-                                              status_code=401)
-        throttle.succeeded(client)
-        old = request.cookies.get(security.cookie_name(client))
-        security.delete_session(db, old)
-        token, _ = security.create_session(db, name.strip() or "同工", client, request.headers.get("user-agent", ""))
-        response = RedirectResponse(target, status_code=303)
-        response.set_cookie(security.cookie_name(client), token, max_age=security.SESSION_MAX_SECONDS, path="/",
-                            httponly=True, samesite="lax", secure=client.scheme == "https")
-        return response
+        elif view.error == "throttled":
+            error = f"密碼錯太多次了，請 {max(1, view.wait_seconds // 60)} 分鐘後再試。"
+        else:
+            error = view.message
+        return _render("login.html", view.scope, next=view.next, error=error, name=view.name)
 
-    @app.post("/logout")
-    def logout(request: Request):
-        client = request.state.client
-        security.delete_session(db, request.cookies.get(security.cookie_name(client)))
-        response = RedirectResponse("/login", status_code=303)
-        response.delete_cookie(security.cookie_name(client), path="/", secure=client.scheme == "https",
-                               httponly=True, samesite="lax")
-        return response
+    def _deny_html(denial: web.Denial) -> str:
+        template, message, hint = DENY_PAGES.get(denial.reason, ("error.html", denial.message, denial.hint))
+        return _render(template, denial.scope, message=message, hint=hint)
 
     @app.get("/healthz")
     def healthz():
@@ -296,10 +264,10 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
 
     @app.get("/settings", response_class=HTMLResponse)
     def settings_page(request: Request):
-        local = request.state.client.local
+        local = _is_local(request)
         return page(request, "settings.html", "settings", settings=store.get_settings(db),
                     has_password=bool(db.kv_get("password_hash")),
-                    sessions=security.active_sessions(db) if local else [],
+                    sessions=[s.public() for s in site.sessions.active()] if local else [],
                     themes=store.list_themes(db), styles=store.list_styles(db),
                     legacy_path=str(paths.legacy_file), data_dir=str(paths.data_dir), port=port)
 
@@ -343,7 +311,7 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
         }
         if not store.get_settings(db)["gdoc_url"]:
             out["import"] = {"sub": "還沒設定文件網址", "tone": "warn"}
-        if request.state.client.local:
+        if _is_local(request):
             st = tunnel.status()
             if st["state"] == "running":
                 out["settings"] = {"sub": "對外連結開著", "tone": "ok"}
@@ -560,13 +528,13 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
     @api.get("/settings")
     def api_settings(request: Request):
         settings = store.get_settings(db)
-        if not request.state.client.local:
+        if not _is_local(request):
             settings.pop("cloudflared_path", None)
         return settings
 
     @api.patch("/settings")
     def api_save_settings(request: Request, body: dict = Body(...)):
-        if not request.state.client.local:
+        if not _is_local(request):
             body = {k: v for k, v in body.items() if k != "cloudflared_path"}
         return store.save_settings(db, body)
 
@@ -576,21 +544,21 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
         if body.get("clear"):
             with db.tx() as conn:
                 conn.execute("DELETE FROM kv WHERE key='password_hash'")
-            security.delete_all_sessions(db)
+            site.logout_everyone()
             return {"ok": True, "hasPassword": False}
         if len(password) < 6:
             raise AppError("密碼至少要 6 個字", "建議用一句好記的話，例如「每週都要敬拜2026」。")
-        db.kv_set("password_hash", security.hash_password(password))
-        security.delete_all_sessions(db)
+        db.kv_set("password_hash", passwords.hash_password(password))
+        site.logout_everyone()
         return {"ok": True, "hasPassword": True}
 
     @api.get("/sessions")
     def api_sessions():
-        return security.active_sessions(db)
+        return [s.public() for s in site.sessions.active()]
 
     @api.post("/sessions/clear")
     def api_clear_sessions():
-        return {"removed": security.delete_all_sessions(db)}
+        return {"removed": site.logout_everyone()}
 
     @api.get("/tunnel")
     def api_tunnel():
@@ -600,7 +568,10 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
     def api_tunnel_start():
         if not db.kv_get("password_hash"):
             raise AppError("請先設定團隊密碼", "沒有密碼就開對外連結，拿到網址的人都能改資料。先在下面設定密碼。")
-        return tunnel.start()
+        try:
+            return tunnel.start()
+        except TunnelDriverError as exc:
+            raise AppError(str(exc), INSTALL_HINT) from exc
 
     @api.post("/tunnel/stop")
     def api_tunnel_stop():
@@ -631,19 +602,6 @@ def create_app(paths: Paths | None = None, *, port: int = 8788, tunnel_command: 
 
     app.include_router(api)
     return app
-
-
-def _quote(text: str) -> str:
-    from urllib.parse import quote
-
-    return quote(text, safe="/?=&")
-
-
-def _safe_next(target: str) -> str:
-    target = target or "/"
-    if not target.startswith("/") or target.startswith("//") or "\\" in target:
-        return "/"
-    return target
 
 
 def _next_sunday(today: date | None = None) -> date:

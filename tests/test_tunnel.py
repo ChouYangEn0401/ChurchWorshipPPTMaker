@@ -1,14 +1,22 @@
+"""對外連結：現在是 CloudServicesPlatform 的 SDK（isdcsp.tunnel.PublicTunnel）在開，這裡測它接在這個程式裡的樣子。"""
+
 import sys
+import time
 from pathlib import Path
 
-from worship_ppt.tunnel import TunnelManager
+import pytest
+from isdcsp.tunnel import PublicTunnel, TunnelDriverError
 
 FAKE = str(Path(__file__).resolve().parent / "fake_cloudflared.py")
 
 
+def make(tmp_path, **kw):
+    return PublicTunnel(8788, command=[sys.executable, FAKE], log_file=tmp_path / "cf.log", watch_seconds=0.2, **kw)
+
+
 def test_quick_tunnel_lifecycle(tmp_path):
     stopped = []
-    tm = TunnelManager(8788, tmp_path / "cf.log", command=[sys.executable, FAKE], on_stop=lambda: stopped.append(1))
+    tm = make(tmp_path, on_stop=lambda: stopped.append(1))
     assert tm.status()["state"] == "stopped" and tm.current_host() is None
     tm.start()
     status = tm.wait_until_ready(15)
@@ -23,9 +31,20 @@ def test_quick_tunnel_lifecycle(tmp_path):
 
 def test_tunnel_that_dies_reports_error(tmp_path, monkeypatch):
     monkeypatch.setenv("FAKE_CF_MODE", "die")
-    tm = TunnelManager(8788, tmp_path / "cf.log", command=[sys.executable, FAKE])
+    stopped = []
+    tm = make(tmp_path, on_stop=lambda: stopped.append(1))
     tm.start()
-    status = tm.wait_until_ready(15)
-    assert status["state"] == "error"
-    assert "中斷" in status["error"]
-    assert tm.current_host() is None
+    assert tm.wait_until_ready(15)["state"] == "running"
+    deadline = time.monotonic() + 15
+    while tm.status()["state"] != "error" and time.monotonic() < deadline:
+        time.sleep(0.1)
+    status = tm.status()
+    assert status["state"] == "error" and "中斷" in status["error"]
+    assert tm.current_host() is None and stopped    # 斷了也一樣：遠端登入的人全部登出
+
+
+def test_without_cloudflared_the_button_hears_it_at_once(tmp_path):
+    tm = PublicTunnel(8788, cloudflared_path=str(tmp_path / "nowhere" / "cloudflared.exe"))
+    assert tm.status()["installed"] is False
+    with pytest.raises(TunnelDriverError):
+        tm.start()
