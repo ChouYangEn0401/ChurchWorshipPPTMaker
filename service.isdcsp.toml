@@ -1,0 +1,36 @@
+# 這個專案對 CloudServicesPlatform（CSP）說的話：我是誰、怎麼啟動、開給誰。
+# 每個欄位的意思：CloudServicesPlatform/docs/GUIDE_ONBOARDING.md。
+#
+# 現在 CSP 是用它自己的 config/registry.toml（worship-ppt）在管這個程式；改用這個檔案時，先把那一段刪掉，
+# 再 `csp svc add <這個資料夾>`、`csp svc approve worship-ppt`（同一個 id 不能同時在兩個地方）。
+
+schema = "isdcsp/v1"
+
+[service]
+id = "worship-ppt"
+name = "敬拜 PPT 產生器"
+description = "敬拜團每週的 PPT：同工用團隊密碼登入（登入、session、CSRF 都是 SDK 的 isdcsp.web）"
+kind = "web"
+
+[run]
+command = [".venv/Scripts/python.exe", "main.py", "web", "--no-browser"]
+# 自己跑時用 8788；CSP 啟動它時給 CSP_PORT，main.py 會先讀它
+port = 8788
+health = "/healthz"
+
+[lifecycle]
+activation = "on-demand"
+
+[access]
+# 你＋同工群組；同工用這個程式自己的團隊密碼登入（經過 CSP 門口時一樣要密碼）
+remote = "members"
+groups = ["guests"]
+auth = "own"
+risk = "normal"
+idle_close_minutes = 120
+
+[claims]
+# 本機（這台電腦的瀏覽器）不用登入；經過 CSP 門口的請求帶著 Cloudflare 的標頭，照樣要團隊密碼
+trusts_loopback = false
+needs_websocket = false
+mutates = true
