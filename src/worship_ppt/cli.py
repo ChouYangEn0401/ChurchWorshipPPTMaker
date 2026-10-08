@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import logging
+import os
 import socket
 import subprocess
 import sys
@@ -127,13 +128,16 @@ def cmd_init(args, paths: Paths) -> int:
 
 
 def cmd_password(args, paths: Paths) -> int:
-    from . import security, store
+    from isdcsp import passwords
+
+    from . import store
+    from .web.app import open_sessions
 
     db = store.open_db(paths)
     if args.clear:
         with db.tx() as conn:
             conn.execute("DELETE FROM kv WHERE key='password_hash'")
-        security.delete_all_sessions(db)
+        open_sessions(paths).delete_all()
         print("✅ 已清除團隊密碼（外面的人會完全連不進來）")
         return 0
     first = getpass.getpass("新的團隊密碼（輸入時不會顯示）：")
@@ -144,8 +148,8 @@ def cmd_password(args, paths: Paths) -> int:
     if len(first) < 6:
         print("❌ 密碼至少要 6 個字")
         return 1
-    db.kv_set("password_hash", security.hash_password(first))
-    security.delete_all_sessions(db)
+    db.kv_set("password_hash", passwords.hash_password(first))
+    open_sessions(paths).delete_all()
     print("✅ 團隊密碼已設定（之前登入的人要重新登入）")
     return 0
 
@@ -210,7 +214,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd")
 
     web = sub.add_parser("web", help="打開網頁")
-    web.add_argument("--port", type=int, default=DEFAULT_PORT)
+    # CloudServicesPlatform 啟動它時給 CSP_PORT（平台配的埠，不會撞）；自己跑就是 8788
+    web.add_argument("--port", type=int, default=int(os.environ.get("CSP_PORT") or DEFAULT_PORT))
     web.add_argument("--no-browser", action="store_true", help="不要自動開瀏覽器")
     web.add_argument("--public", action="store_true", help="同時開啟 Cloudflare 對外連結")
     web.set_defaults(func=cmd_web)

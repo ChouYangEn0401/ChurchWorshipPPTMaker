@@ -19,7 +19,10 @@ python main.py [web|init|import-gdoc|…]  :: root entry point; re-runs itself w
 .venv\Scripts\python.exe -m pytest -q
 ```
 
-Tests use a temp `WORSHIP_PPT_HOME` (see `tests/conftest.py`); never point them at the real `data/`.
+Tests use a temp `WORSHIP_PPT_HOME` (see `tests/conftest.py`); never point them at the real `data/`. Test clients
+connect from `PEER = ("127.0.0.1", ...)`: the SDK refuses a peer that is not this machine, and Starlette's default
+`testclient` is not an address. `tests/fake_cloudflared.py` answers `--metrics` (`/quicktunnel`, `/ready`) like the
+real one; the SDK waits for `/ready`.
 `tests/test_js_parity.py` needs `node` (skipped otherwise).
 
 ## Map
@@ -33,20 +36,24 @@ Tests use a temp `WORSHIP_PPT_HOME` (see `tests/conftest.py`); never point them 
 | `db.py` | SQLite wrapper; append-only `MIGRATIONS`, version in `PRAGMA user_version` |
 | `pptx_builder.py` | Build .pptx: one cloned slide layout per background (image/colour + overlay), text boxes, notes |
 | `images.py` | Upload normalisation (sha256 ids, WebP→JPG/PNG, downscale), thumbnails |
-| `security.py` | local vs tunnel classification, Host allowlist, scrypt passwords, DB sessions, login throttle, headers |
-| `tunnel.py` | cloudflared quick tunnel lifecycle (URL parsed from stderr) |
-| `web/app.py` | `create_app()`: the `gate` middleware, pages, `/api/*` |
+| `web/app.py` | `create_app()`: the gate is the SDK's `isdcsp.web.Site` (added with `app.add_middleware(web.Middleware, site=site)`); this file only sets its rules (`PUBLIC_PATHS`, `LOCAL_ONLY_PREFIXES`, `CSP`) and looks (`_login_html` / `_deny_html` render our own `login.html` / `blocked.html` / `error.html`, `DENY_PAGES` maps `Denial.reason` to our wording). The public link is the SDK's `isdcsp.tunnel.PublicTunnel` (`app.state.tunnel`; `on_stop` logs everyone out). `open_sessions(paths)` = the SDK's `SessionStore` in `data/sessions.sqlite3` (the CLI's `password` command uses the same). Pages, `/api/*`. |
+| *(CloudServicesPlatform SDK)* | `isdcsp` 1.2, carried as `vendor/isdcsp_sdk-1.2.0-py3-none-any.whl`: `isdcsp.web` (local vs remote, Host allowlist, sessions, login + throttle, same-origin + CSRF, security headers), `isdcsp.passwords` (scrypt, same format as before), `isdcsp.tunnel` (cloudflared in a Job Object). Source: `../CloudServicesPlatform/sdk/`. |
 
 ## Invariants — keep these true
 
 1. **Preview = export.** Any change to page splitting, sequence rules, `fit_lines`, `header_scale`, `title_page_size`
    or `char_em` must be made in both `lyrics.py` and `static/js/lyrics.js`; `test_js_parity.py` compares them.
    Avoid float operations that differ between Python and JS (e.g. `round()` ties).
-2. **Server binds 127.0.0.1 only** with `proxy_headers=False`. Remote = any Cloudflare header or non-loopback Host.
-   Remote requests need a DB session (team password); with no password set, remote is refused entirely.
-3. **Host allowlist**: loopback, or the *current* tunnel hostname (`TunnelManager.current_host()`), else 421.
-4. Every non-GET request must be same-origin; remote ones also need `X-CSRF-Token` (except `/login`, `/logout` forms).
+2. **Server binds 127.0.0.1 only** with `proxy_headers=False`. Remote = any Cloudflare header or non-loopback Host
+   (the SDK's rule). Remote requests need a session (team password); with no password set, remote is refused.
+3. **Host allowlist** (the SDK's `Site`): loopback on our port, or one of `tunnel.hosts()` (the current public
+   link, plus the old one during a rotate), `WORSHIP_PPT_ALLOWED_HOSTS`, or — when CloudServicesPlatform starts us —
+   its `CSP_PUBLIC_HOSTS`; else 421.
+4. Every non-GET request must be same-origin; remote ones also need `X-CSRF-Token` (except `/login`, `/logout`).
    Local-only API prefixes are in `LOCAL_ONLY_PREFIXES`.
+4a. **Never re-implement the gate or the tunnel here.** They are CloudServicesPlatform's SDK: change it there,
+   rebuild the wheel (`scripts\windows\build-sdk.bat` in that repo), replace `vendor/*.whl` and the file name in
+   `requirements.txt`. To work on both at once: `.venv\Scripts\pip install -e ..\CloudServicesPlatform\sdk`.
 5. Never render user data as HTML: Jinja autoescape; JS builds DOM with `el()`/`textContent`. No inline `<script>`
    (CSP `script-src 'self'`); page data goes through `<script type="application/json" id="page-data">`.
 6. Service items are **snapshots** (lyrics/sequence/look copied from the library). The library (`songs`) is updated

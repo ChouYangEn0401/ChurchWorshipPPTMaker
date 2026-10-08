@@ -8,3 +8,6 @@ python-pptx>=0.6.23
 Pillow>=10.0
 lxml>=4.9
 qrcode>=7.4
+# CloudServicesPlatform's SDK (login, sessions, CSRF, public link). A copy is kept in vendor/ so this
+# project installs anywhere; to update it, build it there (scripts\windows\build-sdk.bat) and copy the .whl.
+./vendor/isdcsp_sdk-1.2.0-py3-none-any.whl

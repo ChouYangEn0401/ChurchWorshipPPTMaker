@@ -80,10 +80,12 @@
 
 CSP 的「🌐 服務」頁可以幫你開這個網頁的對外網址（CSP 的 ADR 0016）：同工先登入 CSP、按「開啟」，
 再用團隊密碼登入這裡——兩層。CSP 的門口會保留它自己的網址轉進來（不會被當成「這台電腦」），所以
-這裡要認得那個網址：環境變數 `WORSHIP_PPT_ALLOWED_HOSTS=*.trycloudflare.com`（CSP 的 registry.toml
-已經幫你帶，從 CSP 啟動就不用自己設）。可以寫完整網址，或 `*.網域` 比對子網域。
+這裡要認得那個網址：CSP 啟動它時會告訴它（`CSP_PUBLIC_HOSTS`）；舊的做法——環境變數
+`WORSHIP_PPT_ALLOWED_HOSTS=*.trycloudflare.com`——也照樣有用。專案根目錄的 `service.isdcsp.toml` 是給 CSP 看的宣告。
 
-做法參考 CloudServicesPlatform（Host 檢查、CSRF、登入次數限制、`__Host-` cookie），讀 Google 文件的方式參考 LINEBotForChurch 讀 Google Sheet（公開連結、不需要金鑰）。
+登入、session、CSRF、Host 檢查與對外連結用的是 **CloudServicesPlatform 的 SDK**（`isdcsp`，放在 `vendor/` 的 wheel，
+`1-install.bat` 會一起裝）：當掉時對外連結一定一起關、同一個網路猜錯太多次會先擋。讀 Google 文件的方式參考
+LINEBotForChurch 讀 Google Sheet（公開連結、不需要金鑰）。
 
 ## 資料在哪裡
 
@@ -95,6 +97,7 @@ CSP 的「🌐 服務」頁可以幫你開這個網頁的對外網址（CSP 的 
 | `data\images\` | 背景圖（同一張圖只存一份；太大的自動縮到 2560px；WebP 等格式轉成 JPG/PNG） |
 | `data\exports\` | 每一份匯出過的 PPT |
 | `data\logs\` | 執行紀錄、cloudflared 紀錄 |
+| `data\sessions.sqlite3` | 從外面登入的同工（只存摘要；刪掉等於大家重新登入） |
 
 換電腦：把整個 `data` 資料夾複製過去就好。備份會打包成 zip 放在專案旁邊的 `backups\`。
 

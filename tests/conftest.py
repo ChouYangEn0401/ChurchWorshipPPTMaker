@@ -18,6 +18,9 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 TODAY = date(2026, 9, 30)
 DOC_URL = "https://docs.google.com/document/d/16LDxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/edit"
 TUNNEL_HOST = "tidy-bird-sings-loud.trycloudflare.com"
+# 伺服器只綁 127.0.0.1，所以連進來的永遠是這台電腦（瀏覽器或 cloudflared）。測試用的連線也要是這樣：
+# 門口（isdcsp.web.Site）會擋掉「不是這台電腦」的連線，Starlette 預設的 "testclient" 不是 IP。
+PEER = ("127.0.0.1", 50000)
 
 
 @pytest.fixture(autouse=True)
@@ -66,7 +69,7 @@ def app(paths):
 
     application = create_app(paths, port=8788)
     # 假裝對外連結開著，網址是 TUNNEL_HOST（不真的啟動 cloudflared）
-    application.state.tunnel.current_host = lambda: TUNNEL_HOST
+    application.state.tunnel.hosts = lambda: {TUNNEL_HOST}
     return application
 
 
@@ -77,11 +80,11 @@ LOCAL_HEADERS = {"Origin": LOCAL_BASE}
 @pytest.fixture
 def local(app):
     """在主機電腦上用瀏覽器（不用登入）。"""
-    return TestClient(app, base_url=LOCAL_BASE, headers=LOCAL_HEADERS)
+    return TestClient(app, base_url=LOCAL_BASE, headers=LOCAL_HEADERS, client=PEER)
 
 
 def remote_client(app, ip: str = "203.0.113.7") -> TestClient:
     """透過 Cloudflare 臨時網址進來的人。"""
     base = f"https://{TUNNEL_HOST}"
-    return TestClient(app, base_url=base, follow_redirects=False,
+    return TestClient(app, base_url=base, follow_redirects=False, client=PEER,
                       headers={"cf-connecting-ip": ip, "cf-ray": "abc", "Origin": base})
