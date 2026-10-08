@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import logging
+import os
 import socket
 import subprocess
 import sys
@@ -213,7 +214,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd")
 
     web = sub.add_parser("web", help="打開網頁")
-    web.add_argument("--port", type=int, default=DEFAULT_PORT)
+    # CloudServicesPlatform 啟動它時給 CSP_PORT（平台配的埠，不會撞）；自己跑就是 8788
+    web.add_argument("--port", type=int, default=int(os.environ.get("CSP_PORT") or DEFAULT_PORT))
     web.add_argument("--no-browser", action="store_true", help="不要自動開瀏覽器")
     web.add_argument("--public", action="store_true", help="同時開啟 Cloudflare 對外連結")
     web.set_defaults(func=cmd_web)
