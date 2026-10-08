@@ -1,0 +1,33 @@
+{#- 各頁共用的零件。每一頁的開頭都是同一個樣子：小標 → 標題 → 一句話（這一頁做什麼）。 -#}
+
+{% macro page_head(eyebrow, title, lede="") -%}
+<header class="page-head">
+  <div class="eyebrow">{{ eyebrow }}</div>
+  <div class="row">
+    <h1>{{ title }}</h1>
+    <span class="spacer"></span>
+    {% if caller %}{{ caller() }}{% endif %}
+  </div>
+  {% if lede %}<p class="lede">{{ lede }}</p>{% endif %}
+</header>
+{%- endmacro %}
+
+{% macro info(text) -%}
+<span class="info" tabindex="0" role="img" aria-label="{{ text }}" data-tip="{{ text }}">i</span>
+{%- endmacro %}
+
+{% macro empty(title, text="") -%}
+<div class="empty">
+  <b>{{ title }}</b>
+  {% if text %}<span>{{ text }}</span>{% endif %}
+  {% if caller %}<div class="row">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{%- macro md(iso) -%}
+{%- if iso -%}{{ iso[5:7]|int }}/{{ iso[8:10]|int }}{%- endif -%}
+{%- endmacro -%}
+
+{%- macro page_data(value) -%}
+<script type="application/json" id="page-data">{{ value|tojson }}</script>
+{%- endmacro -%}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, page_data, md %}
+{% block title %}從 Google 文件匯入・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{{ page_head("GOOGLE DOCS", "從 Google 文件匯入", "敬拜團每週在 Google 文件寫好歌名、歌序和歌詞，這裡讀進來變成一份歌單。詩歌庫裡有的歌，會自動套上次用的背景和排版。") }}
+
+<section class="panel">
+  <div class="panel-head">1 · 文件網址</div>
+  <div class="panel-body stack">
+    <label class="field"><span class="lbl">Google 文件網址</span>
+      <input type="url" id="gdocUrl" value="{{ settings.gdoc_url }}" placeholder="https://docs.google.com/document/d/……/edit"></label>
+    <div class="row">
+      <button type="button" class="btn btn-primary" id="btnPreview">讀取文件</button>
+      <span class="hint-line">網址會記住，下週直接按「讀取文件」就好。文件要設成「知道連結的任何人都能檢視」。</span>
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="previewPanel" hidden>
+  <div class="panel-head">2 · 讀到的內容<span class="hint" id="sheetMeta"></span></div>
+  <div id="sheetWarn" class="panel-body warnlist" hidden></div>
+  <div id="songs"></div>
+  <div class="panel-foot stack">
+    <div class="row">
+      <label class="field inline"><span class="lbl">聚會日期</span><input type="date" id="svcDate"></label>
+      <div id="targetChoice" class="stack"></div>
+    </div>
+    <div class="row">
+      <button type="button" class="btn btn-primary" id="btnImport">建立歌單 →</button>
+      <span class="hint-line">建好之後會打開編輯畫面，可以再挑背景、調整歌詞。</span>
+    </div>
+  </div>
+</section>
+
+<details class="panel">
+  <summary>文件要長什麼樣子？</summary>
+  <div class="panel-body stack">
+    <p>開頭寫日期（例如 <code>10/11</code>）和服事同工，下面放一個表格，第一列是欄名：</p>
+    <div class="table-wrap"><table class="data tight">
+      <thead><tr><th></th><th>歌名</th><th>調性</th><th>歌序</th><th>歌詞</th></tr></thead>
+      <tbody><tr><td>1</td><td>神同在</td><td>G</td><td>1. 主<br>2. 副前1<br>3. 副</td><td>主：<br>從日出到日落 我要歌頌你的大能<br>副前1：<br>右手舉起來 左手舉起來<br>副：<br>哦！神同在 哦！神同在</td></tr></tbody>
+    </table></div>
+    <ul>
+      <li>欄的順序不重要，看欄名認：<b>歌名</b>、<b>調性</b>、<b>歌序</b>、<b>歌詞</b>。表格可以分好幾個。</li>
+      <li>歌詞裡的段落名自己一行，後面可以有冒號：<code>主：</code>、<code>副前1：</code>、<code>橋</code>、<code>Chorus:</code>。</li>
+      <li>段落裡空一行 = 投影片換下一頁。</li>
+      <li>歌序寫了但歌詞沒有的段落（例如「自由」「尾」），會放一張只有背景的空白頁，匯入時會提醒你。</li>
+    </ul>
+  </div>
+</details>
+{% endblock %}
+{% block data %}{{ page_data({"target": target}) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/import.js?v={{ asset_v }}"></script>{% endblock %}

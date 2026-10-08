@@ -1,0 +1,124 @@
+{
+  "songs": [
+    {
+      "title": "新酒",
+      "lyrics": "[Verse]\n我感覺主恩膏充滿我們中間\n神的聖靈正在運行\n帶下醫治的恩典\n我看見主聖靈正澆灌眾教會\n興起他所揀選榮耀子民\n[Pre-Chorus]\n今天是主所命定的日子\n自由的時刻已來到\n罪的鎖鏈他完全都斷開\n來歡呼讚美他聖名\n[Chorus]\n新酒澆灌帶下新鮮恩膏\n說不盡的喜樂充滿我\n新油流下 帶出大能恩膏\n來宣揚我主榮耀彰顯",
+      "background": "C:/Users/user/Documents/_myProjects_/Python Projects/ChurchWorshipPPTMaker/pic1.png",
+      "lyrics_left": 0.05,
+      "lyrics_top": 1.8,
+      "styles": {
+        "Title": {
+          "font": "Arial",
+          "size": 60,
+          "color": "#FFD700"
+        },
+        "Segment": {
+          "font": "Arial",
+          "size": 30,
+          "color": "#FF4500"
+        },
+        "Lyrics": {
+          "font": "Arial",
+          "size": 52,
+          "color": "#000000"
+        }
+      }
+    },
+    {
+      "title": "永遠掌權",
+      "lyrics": "[verse 1]\n你真好 你真好 無人能與你相比\n你的愛 你的愛 完全向世人顯明\n你是光 你是光 當黑暗向我靠近\n你是我 的盼望 我的罪全都洗淨\n[verse 2]\n你是我 的平安 當恐懼抓住我心\n你信實 不改變 甚至當我遠離你\n你是我 的喜樂 我歌唱單單為你\n你賜給 我生命 死亡失去了權柄\n[chorus]\n喔主!\n我奔向你胸懷 我奔向你胸懷\n你豐盛的大愛 永遠與我同在\n你的擁抱 何等甘甜\n世界真光 永遠掌權\n[verse 3]\n有更多 有更多 超過我所想所求\n你是主 你是主 萬物都宣揚述說\n你在這 你在這 遮蓋我所有軟弱\n你是神 你是神 為你放棄全所有\n[bridge]\n我靈歌唱 別無他名 耶穌 耶穌\n(x4)",
+      "background": "C:/Users/user/Documents/_myProjects_/Python Projects/ChurchWorshipPPTMaker/pic2.png",
+      "lyrics_left": 0.05,
+      "lyrics_top": 1.8,
+      "styles": {
+        "Title": {
+          "font": "Arial",
+          "size": 60,
+          "color": "#FFD700"
+        },
+        "Segment": {
+          "font": "Arial",
+          "size": 30,
+          "color": "#FF4500"
+        },
+        "Lyrics": {
+          "font": "Arial",
+          "size": 50,
+          "color": "#000000"
+        }
+      }
+    },
+    {
+      "title": "豐盛的應許",
+      "lyrics": "[Verse]\n祢仰臉 保守祢所愛的\n祢護庇 永遠不離不棄\n祢將我從淤泥裡捧起\n放我在祢的手心\n[Chorus 1]\n我憑著信心領取 祢豐盛的應許\n世界也不能奪去 神美好的旨意\n我憑著信心領取 祢恩典永不止息\n看見美好應許成就 榮耀全都歸於祢\n[Chorus 2]\n我等候主我相信 祢愛我永不放棄\n世界也不能奪去 神美好的旨意\n我等候主我相信 祢旨意高過我的\n看見美好應許成就\n我全心全意敬拜祢",
+      "background": "C:/Users/user/Documents/_myProjects_/Python Projects/ChurchWorshipPPTMaker/pic3.png",
+      "lyrics_left": 0.05,
+      "lyrics_top": 1.8,
+      "styles": {
+        "Title": {
+          "font": "Arial",
+          "size": 60,
+          "color": "#FFD700"
+        },
+        "Segment": {
+          "font": "Arial",
+          "size": 30,
+          "color": "#FF4500"
+        },
+        "Lyrics": {
+          "font": "Arial",
+          "size": 46,
+          "color": "#000000"
+        }
+      }
+    },
+    {
+      "title": "一顆謙卑的心",
+      "lyrics": "[Verse]\n求祢給我一顆謙卑的心\n給我一顆受教的靈\n好讓我能走在祢的旨意裡\n如同耶穌的生命\n[Chorus]\n幫助我更多的禱告\n幫助我更深的倚靠\n單單相信祢 深深敬畏祢\n一生要跟隨祢",
+      "background": "C:/Users/user/Documents/_myProjects_/Python Projects/ChurchWorshipPPTMaker/pic4.png",
+      "lyrics_left": 0.05,
+      "lyrics_top": 1.8,
+      "styles": {
+        "Title": {
+          "font": "Arial",
+          "size": 60,
+          "color": "#FFD700"
+        },
+        "Segment": {
+          "font": "Arial",
+          "size": 30,
+          "color": "#FF4500"
+        },
+        "Lyrics": {
+          "font": "Arial",
+          "size": 52,
+          "color": "#000000"
+        }
+      }
+    },
+    {
+      "title": "醫治的愛",
+      "lyrics": "[verse]\n在泥濘深谷中  祢領我走出來\n我跌跌又撞撞  是祢扶我站起來\n我滿身是傷痕  祢將我抱起來\n我在祢的懷中  甦醒過來\n\n[chorus1]\n耶穌的愛  醫治了我的心\n破碎的生命  完整起來\n心中又燃起  光明的期待\n再一次  勇敢將自己敞開\n\n[chorus2]\n耶穌的愛 剛強了我的心\n信心的翅膀 再飛起來\n飛越每一個 高山和低谷\n感謝耶穌 醫治的愛",
+      "background": "C:/Users/user/Documents/_myProjects_/Python Projects/ChurchWorshipPPTMaker/background.jpg",
+      "lyrics_left": 0.05,
+      "lyrics_top": 1.8,
+      "styles": {
+        "Title": {
+          "font": "Arial",
+          "size": 60,
+          "color": "#FFD700"
+        },
+        "Segment": {
+          "font": "Arial",
+          "size": 30,
+          "color": "#FF4500"
+        },
+        "Lyrics": {
+          "font": "Arial",
+          "size": 50,
+          "color": "#000000"
+        }
+      }
+    }
+  ]
+}

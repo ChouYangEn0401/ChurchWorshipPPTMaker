@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "worship-ppt"
+description = "教會敬拜 PPT 產生器（網頁版）：歌詞庫、背景庫、每週歌單與匯出紀錄"
+readme = "README.md"
+requires-python = ">=3.11"
+dynamic = ["version"]
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "httpx>=0.27",
+    "python-pptx>=0.6.23",
+    "Pillow>=10.0",
+    "lxml>=4.9",
+    "qrcode>=7.4",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "httpx2"]
+
+[project.scripts]
+worship-ppt = "worship_ppt.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "worship_ppt.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+worship_ppt = ["web/templates/*.html", "web/static/*.css", "web/static/js/*.js", "web/static/*.svg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = [
+    "ignore::DeprecationWarning:starlette.*",
+    "ignore:.*httpx.*:DeprecationWarning",
+]

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head %}
+{% block title %}出了點狀況・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{{ page_head("ERROR", "出了點狀況") }}
+<div class="panel bad">
+  <div class="panel-body stack">
+    <b>{{ message }}</b>
+    {% if hint %}<span class="muted">→ {{ hint }}</span>{% endif %}
+    <div class="row"><a class="btn" href="/">回首頁</a><a class="btn btn-ghost" href="/services">看所有歌單</a></div>
+  </div>
+</div>
+{% endblock %}

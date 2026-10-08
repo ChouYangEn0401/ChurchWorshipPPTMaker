@@ -1,0 +1,10 @@
+# Web version dependencies. Keep this file ASCII-only: pip on Chinese Windows may read it as cp950.
+fastapi>=0.110
+uvicorn>=0.29
+jinja2>=3.1
+python-multipart>=0.0.9
+httpx>=0.27
+python-pptx>=0.6.23
+Pillow>=10.0
+lxml>=4.9
+qrcode>=7.4

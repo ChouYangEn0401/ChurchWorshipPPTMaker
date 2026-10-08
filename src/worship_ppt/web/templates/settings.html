@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head, page_data, info %}
+{% block title %}設定・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{{ page_head("SETTINGS", "設定", "對外連結（讓同工從手機、別台電腦一起編輯）、Google 文件網址、新歌單的預設值。" if is_local else "Google 文件網址和新歌單的預設值。對外連結、密碼、備份只能在主機電腦上設定。") }}
+
+{% if is_local %}
+<section class="fcard" id="public">
+  <div class="fcard-h"><span class="fcard-nm">🌐 對外連結</span><span class="fcard-sub">開一個 Cloudflare 臨時網址，同工用手機、筆電就能一起改歌單。不需要帳號、免費。</span></div>
+  <div class="fcard-body">
+    <div class="ffield" style="--span:12">
+      <div class="public-box">
+        <div class="stack">
+          <div class="row"><span class="lbl">狀態</span><span id="tunnelState" class="badge">…</span></div>
+          <div id="tunnelUrlBox" class="stack" hidden>
+            <span class="public-url copy" id="tunnelUrl"></span>
+            <span class="help">把這個網址傳到敬拜團的 LINE 群組；打開後輸入團隊密碼就能編輯。<b>關掉黑色視窗或按「關閉」網址就失效</b>，下次開會是新的網址。</span>
+          </div>
+          <div id="tunnelError" class="warnlist" hidden></div>
+          <div class="row">
+            <button type="button" class="btn btn-primary" id="btnTunnelStart">開啟對外連結</button>
+            <button type="button" class="btn" id="btnTunnelStop" hidden>關閉</button>
+            <button type="button" class="btn btn-ghost" id="btnCopyUrl" hidden>複製網址</button>
+          </div>
+          <span class="help" id="tunnelInstall" hidden>這台電腦還沒有安裝 cloudflared。打開「命令提示字元」輸入 <code class="copy">winget install --id Cloudflare.cloudflared</code>，裝好後重新開這個程式。</span>
+        </div>
+        <div class="qr" id="qr" hidden><img alt="對外網址的 QR code，用手機掃描就能打開" id="qrImg"></div>
+      </div>
+    </div>
+    <div class="ffield" style="--span:6">
+      <label>團隊密碼 {{ info("從外面連進來的人要輸入這個密碼。只有這台電腦可以改。改密碼會把所有人登出。") }}</label>
+      <div class="row">
+        <input type="password" id="newPassword" placeholder="{{ '已設定（要換就輸入新的）' if has_password else '至少 6 個字' }}" autocomplete="new-password" style="max-width:260px">
+        <button type="button" class="btn" id="btnPassword">{{ "更換密碼" if has_password else "設定密碼" }}</button>
+      </div>
+      <span class="help">{{ "✓ 已設定。" if has_password else "⚠ 還沒設定：沒有密碼就不能開對外連結。" }}在這台電腦上用不需要密碼。</span>
+    </div>
+    <div class="ffield" style="--span:6">
+      <label>現在登入的人</label>
+      <div class="stack small">
+        {% for s in sessions %}
+          <span>👤 <b>{{ s.name }}</b> <span class="muted">· {{ s.ip }} · {{ s.user_agent[:40] }}</span></span>
+        {% else %}
+          <span class="muted">沒有人從外面登入</span>
+        {% endfor %}
+      </div>
+      {% if sessions %}<div><button type="button" class="btn btn-sm btn-danger" id="btnKick">把所有人登出</button></div>{% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="fcard" id="gdoc">
+  <div class="fcard-h"><span class="fcard-nm">📥 Google 文件</span><span class="fcard-sub">敬拜團每週寫歌單的那份文件</span></div>
+  <div class="fcard-body">
+    <div class="ffield" style="--span:12">
+      <label for="sGdoc">文件網址</label>
+      <input type="url" id="sGdoc" value="{{ settings.gdoc_url }}" placeholder="https://docs.google.com/document/d/……/edit">
+      <span class="help">文件要設成「知道連結的任何人都能檢視」。每週都用同一份文件（改內容就好）最方便。</span>
+    </div>
+  </div>
+</section>
+
+<section class="fcard" id="defaults">
+  <div class="fcard-h"><span class="fcard-nm">🧩 新歌單的預設值</span><span class="fcard-sub">新歌、新歌單一開始用什麼</span></div>
+  <div class="fcard-body">
+    <div class="ffield" style="--span:4">
+      <label for="sSize">投影片比例</label>
+      <select id="sSize"><option value="4:3" {{ 'selected' if settings.slide_size == '4:3' }}>4:3</option><option value="16:9" {{ 'selected' if settings.slide_size == '16:9' }}>16:9 寬螢幕</option></select>
+      <span class="help">看教會的投影機／螢幕是哪一種。</span>
+    </div>
+    <div class="ffield" style="--span:4">
+      <label for="sName">歌單名稱</label>
+      <input type="text" id="sName" value="{{ settings.service_name }}" maxlength="40">
+    </div>
+    <div class="ffield" style="--span:4"></div>
+    <div class="ffield" style="--span:6">
+      <label for="sTheme">預設背景</label>
+      <select id="sTheme">{% for t in themes %}<option value="{{ t.id }}" {{ 'selected' if t.id == settings.default_theme_id }}>{{ t.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="ffield" style="--span:6">
+      <label for="sStyle">預設排版</label>
+      <select id="sStyle">{% for s in styles %}<option value="{{ s.id }}" {{ 'selected' if s.id == settings.default_style_id }}>{{ s.name }}</option>{% endfor %}</select>
+    </div>
+  </div>
+</section>
+
+<div class="factions">
+  <button type="button" class="btn btn-primary" id="btnSave">儲存設定</button>
+  <span class="save-state" id="saveState"></span>
+</div>
+
+{% if is_local %}
+<section class="fcard" id="data">
+  <div class="fcard-h"><span class="fcard-nm">💾 資料</span><span class="fcard-sub">備份、搬家、匯入桌面版</span></div>
+  <div class="fcard-body">
+    <div class="ffield" style="--span:12">
+      <label>資料放在哪</label>
+      <span class="mono small copy">{{ data_dir }}</span>
+      <span class="help">歌詞、背景圖、匯出的 PPT、資料庫都在這個資料夾。換電腦時把整個 data 資料夾搬過去就好。</span>
+    </div>
+    <div class="ffield" style="--span:6">
+      <label>備份</label>
+      <div><button type="button" class="btn" id="btnBackup">現在備份</button></div>
+      <span class="help">打包成一個 zip 放在專案旁邊的 backups 資料夾（裡面有還原說明）。建議每個月備份一次，另外存到雲端硬碟。</span>
+    </div>
+    <div class="ffield" style="--span:6">
+      <label for="legacyPath">匯入桌面版的存檔</label>
+      <div class="row"><input type="text" id="legacyPath" value="{{ legacy_path }}"><button type="button" class="btn" id="btnLegacy">匯入</button></div>
+      <span class="help">桌面版「儲存專案」存出來的 .json。背景圖要跟 .json 放在同一個資料夾。</span>
+    </div>
+    <div class="ffield" style="--span:12">
+      <label for="sCloudflared">cloudflared 的位置（通常不用填）</label>
+      <input type="text" id="sCloudflared" value="{{ settings.cloudflared_path }}" placeholder="自動尋找">
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+{% block data %}{{ page_data({"isLocal": is_local}) }}{% endblock %}
+{% block scripts %}<script type="module" src="/static/js/settings.js?v={{ asset_v }}"></script>{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from "_macros.html" import page_head %}
+{% block title %}說明・敬拜 PPT 產生器{% endblock %}
+{% block content %}
+{{ page_head("HELP", "怎麼用", "每週做敬拜 PPT 的流程、歌詞怎麼寫、怎麼讓同工一起編輯，還有常見問題。") }}
+
+<section class="panel">
+  <div class="panel-head">每週的流程</div>
+  <div class="panel-body">
+    <div class="flow">
+      <div class="flow-step"><b>1. 敬拜團寫文件</b><span>主領在 Google 文件寫好歌名、歌序、歌詞（跟平常一樣）。</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>2. 匯入</b><span>「從 Google 文件匯入」→ 讀取文件 → 建立歌單。</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>3. 挑背景、看預覽</b><span>唱過的歌會自動用上次的背景和排版；新歌挑一下。</span></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><b>4. 匯出 PPT</b><span>下載 .pptx，放到播放的電腦。詩歌庫會自動更新。</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="cols">
+  <section class="panel">
+    <div class="panel-head">歌詞怎麼寫</div>
+    <div class="panel-body stack">
+      <pre class="lyr">[主]
+從日出到日落 我要歌頌你的大能
+並在列邦中述說你的同在
+
+我要跳舞讚美祂 擊鼓彈琴向祂歡呼
+願在列邦中高舉神同在
+[副]
+哦！神同在 哦！神同在
+讓主的愛敞開你的胸懷</pre>
+      <ul class="steps">
+        <li><code>[段落名]</code> 自己一行，開始一個段落。中文英文都可以：主、副、副前1、橋、Verse、Chorus…</li>
+        <li>同一個段落裡<b>空一行 = 換下一頁</b>。上面的 [主] 會變成兩頁。</li>
+        <li>一行太長時，會從<b>空白處</b>折行（歌詞的句讀），所以句子中間記得留空白。</li>
+        <li>排版可以設定「每頁最多幾行」，太長的頁會自動平均拆開。</li>
+      </ul>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head">歌序</div>
+    <div class="panel-body stack">
+      <p>例如 <code>主 主 副前1 副 主 副前1 副 副前2 副 副</code>：投影片就照這個順序排，操作的人一路按「下一頁」就好。</p>
+      <ul class="steps">
+        <li>空白、逗號、頓號、換行都可以分開；「1. 主」這種編號會自動略過。</li>
+        <li>主＝主歌＝Verse＝V、副＝副歌＝Chorus＝C、橋＝Bridge；後面的數字要一樣（副前1 ≠ 副前2）。</li>
+        <li><code>尾*2</code>：只放一頁，備忘稿會寫「×2」提醒。</li>
+        <li>前奏、間奏、自由這種沒有歌詞的，會放一張只有背景的空白頁。</li>
+        <li>不想照歌序？歌單左上角取消「照歌序排投影片」，每段只放一次。</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<div class="cols">
+  <section class="panel">
+    <div class="panel-head">讓同工一起編輯（對外連結）</div>
+    <div class="panel-body stack">
+      <ol class="steps">
+        <li>在主機電腦打開「設定」，先設定<b>團隊密碼</b>。</li>
+        <li>按「開啟對外連結」，等十幾秒會出現一個 <code>https://….trycloudflare.com</code> 網址和 QR code。</li>
+        <li>把網址傳到敬拜團 LINE 群組。同工打開、輸入名字和密碼，就能一起改。</li>
+        <li>做完按「關閉」或直接關掉黑色視窗，網址就失效了。下次開會是新的網址。</li>
+      </ol>
+      <p class="help">也可以直接雙擊專案資料夾裡的 <code>run_public.bat</code>，程式和對外連結一起開。</p>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="panel-head">在 PowerPoint 裡換背景</div>
+    <div class="panel-body stack">
+      <p>匯出的 PPT 裡，每個背景是一個「版面配置」，名字叫「背景：xxx」。要換整首歌的背景：</p>
+      <ol class="steps">
+        <li>PowerPoint 上方「檢視」→「投影片母片」。</li>
+        <li>左邊找到「背景：xxx」那一個，按右鍵 →「背景格式」→ 換圖片。</li>
+        <li>「關閉母片檢視」，用到這個背景的每一頁都換好了。暗色遮罩會保留。</li>
+      </ol>
+      <p class="help">只想換某一頁：在那一頁按右鍵 →「背景格式」就好，不會影響其他頁。</p>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel-head">常見問題</div>
+  <div class="panel-body">
+    <details class="faq"><summary>預覽跟匯出的 PPT 一樣嗎？</summary>
+      <p>字級、折行、分頁、位置都是用同一套規則算的，幾乎一樣。唯一的差別是字型：預覽用的是你這台電腦／手機的字型，PPT 用的是播放那台電腦的字型。</p></details>
+    <details class="faq"><summary>PPT 的字型怪怪的？</summary>
+      <p>排版選的字型，播放 PPT 的那台電腦也要有裝。Windows 都有「微軟正黑體」，最保險。</p></details>
+    <details class="faq"><summary>在 LINE 裡打開網址，按匯出沒有反應？</summary>
+      <p>LINE、臉書的內建瀏覽器不能下載檔案。點右上角「⋯」→「用瀏覽器開啟」再按一次。</p></details>
+    <details class="faq"><summary>兩個人同時改同一首歌會怎樣？</summary>
+      <p>每一次存檔都會檢查版本。後存的人會看到「○○ 剛剛也改了這首歌」，畫面換成最新的內容，剛打的字可以一鍵複製再貼回去。不會默默蓋掉別人的修改。</p></details>
+    <details class="faq"><summary>文件上的歌詞跟詩歌庫的不一樣，會用哪個？</summary>
+      <p>匯入時用文件上的（那是這週的安排）。匯出後詩歌庫會更新成這次的版本，舊的歌詞會留在那首歌的「舊版本」裡，隨時可以還原。</p></details>
+    <details class="faq"><summary>資料在哪裡？怎麼備份、搬家？</summary>
+      <p>全部在專案資料夾的 <code>data</code> 裡（資料庫、背景圖、做過的 PPT）。「設定 → 資料 → 現在備份」會打包成 zip。換電腦時把 <code>data</code> 整個複製過去就好。</p></details>
+    <details class="faq"><summary>以前用桌面版做的歌怎麼辦？</summary>
+      <p>「設定 → 資料 → 匯入桌面版的存檔」選 ppt_settings.json，歌詞、背景圖、字型設定都會搬進來。桌面版本身放在專案資料夾的 legacy\desktop，說明在那裡的 README。</p></details>
+  </div>
+</section>
+{% endblock %}
