@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-REQUIRED = ("fastapi", "uvicorn", "jinja2", "multipart", "httpx", "pptx", "PIL", "lxml", "qrcode")
+REQUIRED = ("fastapi", "uvicorn", "jinja2", "multipart", "httpx", "pptx", "PIL", "lxml", "qrcode", "isdcsp")
 
 
 def _venv_python() -> Path:
